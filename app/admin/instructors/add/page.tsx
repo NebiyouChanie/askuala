@@ -7,69 +7,88 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useForm, useFieldArray } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 export default function AdminInstructorAddPage() {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [address, setAddress] = useState("")
-  const [yearsExp, setYearsExp] = useState<string>("")
-  const [hourlyRate, setHourlyRate] = useState<string>("")
-  const [status, setStatus] = useState<string>("active")
-  const [bio, setBio] = useState<string>("")
   const [cvPath, setCvPath] = useState<string|undefined>(undefined)
   const [cvUploading, setCvUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement|null>(null)
-
-  type Course = { title: string; level?: string; format?: string; topics: string[] }
-  const [courses, setCourses] = useState<Course[]>([])
   const [submitting, setSubmitting] = useState(false)
 
-  const addCourse = () => setCourses((prev) => [...prev, { title: "", topics: [] }])
-  const updateCourse = (idx: number, field: keyof Course, value: any) => {
-    setCourses((prev) => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c))
-  }
-  const updateCourseTopics = (idx: number, text: string) => {
-    const topics = text.split(',').map(t => t.trim()).filter(Boolean)
-    updateCourse(idx, 'topics', topics)
-  }
-  const removeCourse = (idx: number) => setCourses((prev) => prev.filter((_, i) => i !== idx))
+  const CourseSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    level: z.string().optional(),
+    format: z.string().optional(),
+    topicsText: z.string().min(1, "At least one topic"),
+  })
+
+  const InstructorAddSchema = z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email"),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    yearsExp: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v == null || (!Number.isNaN(v) && v >= 0), { message: "Must be >= 0" }),
+    hourlyRate: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((v) => (v === "" || v == null ? undefined : Number(v)))
+      .refine((v) => v == null || (!Number.isNaN(v) && v >= 0), { message: "Must be >= 0" }),
+    status: z.enum(["active", "inactive", "suspended"], { required_error: "Status is required" }),
+    courses: z.array(CourseSchema).min(1, "Add at least one course"),
+    bio: z.string().optional(),
+  })
+
+  type InstructorAddValues = z.infer<typeof InstructorAddSchema>
+
+  const form = useForm<InstructorAddValues>({
+    resolver: zodResolver(InstructorAddSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      yearsExp: undefined,
+      hourlyRate: undefined,
+      status: "active",
+      courses: [],
+      bio: "",
+    },
+  })
+
+  const { fields: courseFields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "courses",
+  })
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    // Client-side validations
-    if (!firstName.trim() || !lastName.trim()) {
-      toast.error('First and last name are required')
-      return
-    }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Valid email is required')
-      return
-    }
-    if (courses.length === 0) {
-      toast.error('Add at least one course')
-      return
-    }
-    const invalidCourse = courses.find(c => !c.title.trim() || (c.topics?.length ?? 0) === 0)
-    if (invalidCourse) {
-      toast.error('Each course must have a title and at least one topic')
-      return
-    }
+  const onSubmit = async (values: InstructorAddValues) => {
     try {
       setSubmitting(true)
       const payload = {
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        address: address || null,
-        yearsExperience: yearsExp ? Number(yearsExp) : null,
-        hourlyRateEtb: hourlyRate ? Number(hourlyRate) : null,
-        status,
-        courses,
-        bio: bio || null,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        phone: values.phone || null,
+        address: values.address || null,
+        yearsExperience: values.yearsExp ?? null,
+        hourlyRateEtb: values.hourlyRate ?? null,
+        status: values.status,
+        courses: values.courses.map(c => ({
+          title: c.title,
+          level: c.level || undefined,
+          format: c.format || undefined,
+          topics: c.topicsText.split(',').map(t => t.trim()).filter(Boolean),
+        })),
+        bio: values.bio || null,
         cvPath: cvPath || null,
       }
       const res = await fetch('/api/admin/instructors', {
@@ -80,7 +99,19 @@ export default function AdminInstructorAddPage() {
       const data = await res.json()
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to create instructor')
       toast.success('Instructor added')
-      setFirstName(""); setLastName(""); setEmail(""); setPhone(""); setAddress(""); setYearsExp(""); setHourlyRate(""); setStatus('active'); setBio(""); setCourses([]); setCvPath(undefined)
+      form.reset({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        yearsExp: undefined,
+        hourlyRate: undefined,
+        status: "active",
+        courses: [],
+        bio: "",
+      })
+      setCvPath(undefined)
     } catch (e: any) {
       toast.error(e.message || 'Failed to create')
     } finally {
@@ -98,144 +129,273 @@ export default function AdminInstructorAddPage() {
           <CardTitle>Instructor Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">First Name</label>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Phone</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Last Name</label>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <Input value={address} onChange={(e) => setAddress(e.target.value)} />
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Years Experience</label>
-                <Input type="number" min="0" value={yearsExp} onChange={(e) => setYearsExp(e.target.value)} />
+              <div className="grid md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="yearsExp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Years Experience</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="hourlyRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Hourly Rate (ETB)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Status</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Hourly Rate (ETB)</label>
-                <Input type="number" min="0" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium mb-1">Courses</label>
-                <Button type="button" size="sm" variant="outline" onClick={addCourse}>Add Course</Button>
-              </div>
-              <div className="space-y-4 mt-2">
-                {courses.map((c, i) => (
-                  <div key={i} className="border rounded p-3 grid md:grid-cols-12 gap-2 items-end">
-                    <div className="md:col-span-3">
-                      <label className="block text-xs mb-1">Title</label>
-                      <Input value={c.title} onChange={(e) => updateCourse(i, 'title', e.target.value)} required />
+              <div>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="block text-sm font-medium mb-1">Courses</FormLabel>
+                  <Button type="button" size="sm" variant="outline" onClick={() => append({ title: "", level: "", format: "", topicsText: "" })}>Add Course</Button>
+                </div>
+                <div className="space-y-4 mt-2">
+                  {courseFields.map((fieldItem, i) => (
+                    <div key={fieldItem.id} className="border rounded p-3 grid md:grid-cols-12 gap-2 items-end">
+                      <div className="md:col-span-3">
+                        <FormField
+                          control={form.control}
+                          name={`courses.${i}.title` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="block text-xs mb-1">Title</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FormField
+                          control={form.control}
+                          name={`courses.${i}.level` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="block text-xs mb-1">Level</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FormField
+                          control={form.control}
+                          name={`courses.${i}.format` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="block text-xs mb-1">Format</FormLabel>
+                              <FormControl>
+                                <Input placeholder="live/async/f2f" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="md:col-span-4">
+                        <FormField
+                          control={form.control}
+                          name={`courses.${i}.topicsText` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="block text-xs mb-1">Topics (comma separated)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. Algebra, Geometry" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="md:col-span-1 text-right">
+                        <Button type="button" size="sm" variant="destructive" onClick={() => remove(i)}>Remove</Button>
+                      </div>
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs mb-1">Level</label>
-                      <Input value={c.level || ''} onChange={(e) => updateCourse(i, 'level', e.target.value)} />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs mb-1">Format</label>
-                      <Input value={c.format || ''} onChange={(e) => updateCourse(i, 'format', e.target.value)} placeholder="live/async/f2f" />
-                    </div>
-                    <div className="md:col-span-4">
-                      <label className="block text-xs mb-1">Topics (comma separated)</label>
-                      <Input onChange={(e) => updateCourseTopics(i, e.target.value)} placeholder="e.g. Algebra, Geometry" />
-                    </div>
-                    <div className="md:col-span-1 text-right">
-                      <Button type="button" size="sm" variant="destructive" onClick={() => removeCourse(i)}>Remove</Button>
-                    </div>
-                  </div>
-                ))}
-                {courses.length === 0 && (
-                  <div className="text-sm text-gray-500">No courses added yet.</div>
+                  ))}
+                  {courseFields.length === 0 && (
+                    <div className="text-sm text-gray-500">No courses added yet.</div>
+                  )}
+                </div>
+                {form.formState.errors.courses && (typeof form.formState.errors.courses.message === 'string') && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.courses.message)}</p>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">CV (PDF only)</label>
-              <div className="flex items-center gap-3">
-                <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  Upload PDF
-                </Button>
-                {cvPath ? (
-                  <a href={cvPath} target="_blank" className="text-sm underline">View uploaded CV</a>
-                ) : (
-                  <span className="text-sm text-gray-500">No file selected</span>
-                )}
+              <div>
+                <FormLabel className="block text-sm font-medium mb-1">CV (PDF only)</FormLabel>
+                <div className="flex items-center gap-3">
+                  <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    Upload PDF
+                  </Button>
+                  {cvPath ? (
+                    <a href={cvPath} target="_blank" className="text-sm underline">View uploaded CV</a>
+                  ) : (
+                    <span className="text-sm text-gray-500">No file selected</span>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  hidden
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (!file.name.toLowerCase().endsWith('.pdf')) {
+                      toast.error('Only PDF files are allowed')
+                      return
+                    }
+                    setCvUploading(true)
+                    try {
+                      const fd = new FormData()
+                      fd.append('cv', file)
+                      const res = await fetch('/api/admin/instructors/upload', { method: 'POST', body: fd })
+                      const data = await res.json()
+                      if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed')
+                      setCvPath(data.path)
+                      toast.success('CV uploaded')
+                    } catch (err: any) {
+                      toast.error(err.message || 'Upload failed')
+                    } finally {
+                      setCvUploading(false)
+                    }
+                  }}
+                />
+                {cvUploading && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
+                
               </div>
-              <input
-                ref={fileInputRef}
-                hidden
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  if (!file.name.toLowerCase().endsWith('.pdf')) {
-                    toast.error('Only PDF files are allowed')
-                    return
-                  }
-                  setCvUploading(true)
-                  try {
-                    const fd = new FormData()
-                    fd.append('cv', file)
-                    const res = await fetch('/api/admin/instructors/upload', { method: 'POST', body: fd })
-                    const data = await res.json()
-                    if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed')
-                    setCvPath(data.path)
-                    toast.success('CV uploaded')
-                  } catch (err: any) {
-                    toast.error(err.message || 'Upload failed')
-                  } finally {
-                    setCvUploading(false)
-                  }
-                }}
+
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-medium mb-1">Bio</FormLabel>
+                    <FormControl>
+                      <Textarea rows={4} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {cvUploading && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
-              
-            </div>
 
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Bio</label>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} />
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={submitting} className="bg-[#245D51] hover:bg-[#245D51]/90 text-white">
-                {submitting ? 'Saving...' : 'Save Instructor'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>
-            </div>
-          </form>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={submitting} className="bg-[#245D51] hover:bg-[#245D51]/90 text-white">
+                  {submitting ? 'Saving...' : 'Save Instructor'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

@@ -9,6 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Search, User, Mail, Phone, MapPin, Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 interface User {
   user_id: string
@@ -19,31 +23,7 @@ interface User {
   address: string
 }
 
-interface FormData {
-  // User fields
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address: string
-  password: string
-  confirmPassword: string
-  
-  // Course-specific fields
-  age?: number
-  gender?: string
-  gradeLevels?: string[]
-  gradeLevel?: string
-  subjects?: string[]
-  startTime?: string
-  endTime?: string
-  availableDays?: string[]
-  deliveryMethod?: string
-  trainingType?: string
-  studyArea?: string
-  researchLevel?: string
-  cv?: File | null
-}
+ 
 
 const courseTypes = [
   {
@@ -99,27 +79,57 @@ export default function AdminRegistrationAddPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [generatedPassword, setGeneratedPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    password: '',
-    confirmPassword: '',
-    age: undefined,
-    gender: '',
-    gradeLevels: [],
-    gradeLevel: '',
-    subjects: [],
-    startTime: '',
-    endTime: '',
-    availableDays: [],
-    deliveryMethod: '',
-    trainingType: '',
-    studyArea: '',
-    researchLevel: '',
-    cv: null
+  const AdminRegistrationSchema = z.object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Invalid email'),
+    phone: z.string().min(7, 'Phone is required'),
+    address: z.string().min(1, 'Address is required'),
+    password: z.string().min(8, 'Password must be at least 8 characters').optional(),
+    confirmPassword: z.string().optional(),
+    age: z
+      .union([z.number().int().min(1, 'Age is required'), z.undefined()])
+      .optional(),
+    gender: z.string().optional(),
+    gradeLevels: z.array(z.string()).optional(),
+    gradeLevel: z.string().optional(),
+    subjects: z.array(z.string()).optional(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    availableDays: z.array(z.string()).optional(),
+    deliveryMethod: z.string().optional(),
+    trainingType: z.string().optional(),
+    studyArea: z.string().optional(),
+    researchLevel: z.string().optional(),
+    cv: z.any().optional(),
+  })
+
+  type AdminRegistrationValues = z.infer<typeof AdminRegistrationSchema>
+
+  const form = useForm<AdminRegistrationValues>({
+    resolver: zodResolver(AdminRegistrationSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      password: '',
+      confirmPassword: '',
+      age: undefined,
+      gender: '',
+      gradeLevels: [],
+      gradeLevel: '',
+      subjects: [],
+      startTime: '',
+      endTime: '',
+      availableDays: [],
+      deliveryMethod: '',
+      trainingType: '',
+      studyArea: '',
+      researchLevel: '',
+      cv: null,
+    },
   })
 
   const generatePassword = () => {
@@ -129,7 +139,8 @@ export default function AdminRegistrationAddPage() {
       password += chars.charAt(Math.floor(Math.random() * chars.length))
     }
     setGeneratedPassword(password)
-    setFormData(prev => ({ ...prev, password: password, confirmPassword: password }))
+    form.setValue('password', password, { shouldValidate: true })
+    form.setValue('confirmPassword', password, { shouldValidate: true })
   }
 
   const searchUser = async () => {
@@ -161,28 +172,21 @@ export default function AdminRegistrationAddPage() {
 
   const selectUser = (user: User) => {
     setSelectedUser(user)
-    setFormData(prev => ({
-      ...prev,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address
-    }))
+    form.setValue('firstName', user.first_name)
+    form.setValue('lastName', user.last_name)
+    form.setValue('email', user.email)
+    form.setValue('phone', user.phone)
+    form.setValue('address', user.address)
     setSearchResults([])
     setSearchEmail('')
     toast.success('User selected successfully')
-  }
-
-  const updateFormData = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleBackToCourses = () => {
     setSelectedCourse('')
     setSelectedUser(null)
     setGeneratedPassword('')
-    setFormData({
+    form.reset({
       firstName: '',
       lastName: '',
       email: '',
@@ -202,11 +206,11 @@ export default function AdminRegistrationAddPage() {
       trainingType: '',
       studyArea: '',
       researchLevel: '',
-      cv: null
+      cv: null,
     })
   }
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: AdminRegistrationValues) => {
     setLoading(true)
     setGeneratedPassword('') // Clear any previous success state
     try {
@@ -214,17 +218,31 @@ export default function AdminRegistrationAddPage() {
 
       // If no user selected, create new user
       if (!userId) {
+        // Validate password presence and match for new user
+        if (!data.password) {
+          form.setError('password', { type: 'manual', message: 'Password is required' })
+          throw new Error('Validation failed')
+        }
+        if (!data.confirmPassword) {
+          form.setError('confirmPassword', { type: 'manual', message: 'Please confirm password' })
+          throw new Error('Validation failed')
+        }
+        if (data.password !== data.confirmPassword) {
+          form.setError('confirmPassword', { type: 'manual', message: 'Passwords do not match' })
+          throw new Error('Validation failed')
+        }
+
         const userResponse = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
-            password: formData.password,
-            confirmPassword: formData.confirmPassword
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            password: data.password,
+            confirmPassword: data.confirmPassword
           })
         })
 
@@ -253,9 +271,9 @@ export default function AdminRegistrationAddPage() {
 
       // Handle file upload for tutors
       let cvPath = ''
-      if (selectedCourse === 'tutors' && formData.cv) {
+      if (selectedCourse === 'tutors' && data.cv) {
         const formDataFile = new FormData()
-        formDataFile.append('cv', formData.cv)
+        formDataFile.append('cv', data.cv)
         
         const uploadResponse = await fetch('/api/tutors/upload-cv', {
           method: 'POST',
@@ -272,50 +290,83 @@ export default function AdminRegistrationAddPage() {
       // Prepare course data based on course type
       let courseData: any = {
         userId,
-        age: formData.age,
-        gender: formData.gender,
-        deliveryMethod: formData.deliveryMethod
+        age: data.age,
+        gender: data.gender,
+        deliveryMethod: data.deliveryMethod
       }
 
       // Add course-specific fields
+      let hasValidationError = false
       switch (selectedCourse) {
         case 'tutors':
+          // Conditional validations for tutors
+          if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
+          if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
+          if (!data.gradeLevels || data.gradeLevels.length === 0) { form.setError('gradeLevels' as any, { type: 'manual', message: 'Select at least one grade range' }); hasValidationError = true }
+          if (!data.subjects || data.subjects.length === 0) { form.setError('subjects' as any, { type: 'manual', message: 'Select at least one subject' }); hasValidationError = true }
+          if (!data.startTime) { form.setError('startTime' as any, { type: 'manual', message: 'Start time is required' }); hasValidationError = true }
+          if (!data.endTime) { form.setError('endTime' as any, { type: 'manual', message: 'End time is required' }); hasValidationError = true }
+          if (!data.availableDays || data.availableDays.length === 0) { form.setError('availableDays' as any, { type: 'manual', message: 'Select available days' }); hasValidationError = true }
+          if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
+          if (!data.cv) { form.setError('cv' as any, { type: 'manual', message: 'CV (PDF) is required' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            gradeLevels: formData.gradeLevels,
-            subjects: formData.subjects,
-            startTime: formData.startTime,
-            endTime: formData.endTime,
-            availableDays: formData.availableDays,
+            gradeLevels: data.gradeLevels,
+            subjects: data.subjects,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            availableDays: data.availableDays,
             cvPath: cvPath
           }
           break
         case 'tutees':
+          if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
+          if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
+          if (!data.gradeLevel) { form.setError('gradeLevel' as any, { type: 'manual', message: 'Select a grade level' }); hasValidationError = true }
+          if (!data.startTime) { form.setError('startTime' as any, { type: 'manual', message: 'Start time is required' }); hasValidationError = true }
+          if (!data.endTime) { form.setError('endTime' as any, { type: 'manual', message: 'End time is required' }); hasValidationError = true }
+          if (!data.availableDays || data.availableDays.length === 0) { form.setError('availableDays' as any, { type: 'manual', message: 'Select available days' }); hasValidationError = true }
+          if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            gradeLevel: formData.gradeLevel,
-            subjects: formData.subjects,
-            startTime: formData.startTime,
-            endTime: formData.endTime,
-            availableDays: formData.availableDays
+            gradeLevel: data.gradeLevel,
+            subjects: data.subjects,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            availableDays: data.availableDays
           }
           break
         case 'training':
+          if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
+          if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
+          if (!data.trainingType) { form.setError('trainingType' as any, { type: 'manual', message: 'Select training type' }); hasValidationError = true }
+          if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            trainingType: formData.trainingType
+            trainingType: data.trainingType
           }
           break
         case 'research':
+          if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
+          if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
+          if (!data.studyArea) { form.setError('studyArea' as any, { type: 'manual', message: 'Study area is required' }); hasValidationError = true }
+          if (!data.researchLevel) { form.setError('researchLevel' as any, { type: 'manual', message: 'Select research level' }); hasValidationError = true }
+          if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            studyArea: formData.studyArea,
-            researchLevel: formData.researchLevel
+            studyArea: data.studyArea,
+            researchLevel: data.researchLevel
           }
           break
         case 'entrepreneurship':
+          if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
+          if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
           // No additional fields needed
           break
+      }
+
+      if (hasValidationError) {
+        throw new Error('Validation failed')
       }
 
       console.log('🚀 Sending course data:', courseData)
@@ -327,17 +378,16 @@ export default function AdminRegistrationAddPage() {
       })
 
       const courseResult = await courseResponse.json()
-      console.log('🚀 Course registration response:', courseResult)
       
       if (!courseResult.success) {
         throw new Error(courseResult.error || 'Failed to register for course')
       }
 
       toast.success('Registration completed successfully!')
-      setGeneratedPassword(formData.password)
+      setGeneratedPassword(data.password || '')
       
       // Reset form
-      setFormData({
+      form.reset({
         firstName: '',
         lastName: '',
         email: '',
@@ -357,7 +407,7 @@ export default function AdminRegistrationAddPage() {
         trainingType: '',
         studyArea: '',
         researchLevel: '',
-        cv: null
+        cv: null,
       })
       setSelectedUser(null)
       setSelectedCourse('')
@@ -374,6 +424,8 @@ export default function AdminRegistrationAddPage() {
     if (!selectedCourse) return null
 
     return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-gray-900">
@@ -385,57 +437,71 @@ export default function AdminRegistrationAddPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-gray-700 font-medium">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => updateFormData('firstName', e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-gray-700 font-medium">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => updateFormData('lastName', e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateFormData('email', e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-gray-700 font-medium">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => updateFormData('phone', e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="address" className="text-gray-700 font-medium">Address</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => updateFormData('address', e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">First Name</FormLabel>
+                    <FormControl>
+                      <Input id="firstName" className="bg-white border-gray-300 text-gray-900" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Last Name</FormLabel>
+                    <FormControl>
+                      <Input id="lastName" className="bg-white border-gray-300 text-gray-900" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
+                    <FormControl>
+                      <Input id="email" type="email" className="bg-white border-gray-300 text-gray-900" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Phone</FormLabel>
+                    <FormControl>
+                      <Input id="phone" className="bg-white border-gray-300 text-gray-900" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2 space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Address</FormLabel>
+                    <FormControl>
+                      <Input id="address" className="bg-white border-gray-300 text-gray-900" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Password fields for new users */}
@@ -454,39 +520,43 @@ export default function AdminRegistrationAddPage() {
                   </Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => updateFormData('password', e.target.value)}
-                        className="bg-white border-gray-300 text-gray-900 pr-10"
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => updateFormData('confirmPassword', e.target.value)}
-                      className="bg-white border-gray-300 text-gray-900"
-                      required
-                    />
-                  </div>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+                      <div className="relative">
+                        <FormControl>
+                          <Input id="password" type={showPassword ? 'text' : 'password'} className="bg-white border-gray-300 text-gray-900 pr-10" {...field} />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input id="confirmPassword" type="password" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 </div>
               </div>
             )}
@@ -497,33 +567,49 @@ export default function AdminRegistrationAddPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Tutor Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-gray-700 font-medium">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="18"
-                    max="65"
-                    value={formData.age || ''}
-                    onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-gray-700 font-medium">Gender</Label>
-                  <select
-                    id="gender"
-                    value={formData.gender}
-                    onChange={(e) => updateFormData('gender', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="18"
+                          max="65"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                      <FormControl>
+                        <select
+                          id="gender"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -532,24 +618,27 @@ export default function AdminRegistrationAddPage() {
                   {gradeLevelRanges.map((grade) => (
                     <Badge
                       key={grade}
-                      variant={formData.gradeLevels?.includes(grade) ? "default" : "outline"}
+                      variant={(form.getValues('gradeLevels') || []).includes(grade) ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.gradeLevels?.includes(grade)
+                        (form.getValues('gradeLevels') || []).includes(grade)
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
                       onClick={() => {
-                        const current = formData.gradeLevels || []
+                        const current = form.getValues('gradeLevels') || []
                         const updated = current.includes(grade)
                           ? current.filter(g => g !== grade)
                           : [...current, grade]
-                        updateFormData('gradeLevels', updated)
+                        form.setValue('gradeLevels', updated, { shouldValidate: true })
                       }}
                     >
                       {grade}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.gradeLevels && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevels.message || 'Select at least one grade range')}</p>
+                )}
               </div>
 
               <div>
@@ -558,49 +647,56 @@ export default function AdminRegistrationAddPage() {
                   {subjects.map((subject) => (
                     <Badge
                       key={subject}
-                      variant={formData.subjects?.includes(subject) ? "default" : "outline"}
+                      variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.subjects?.includes(subject)
+                        (form.getValues('subjects') || []).includes(subject)
                           ? 'bg-green-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
                       onClick={() => {
-                        const current = formData.subjects || []
+                        const current = form.getValues('subjects') || []
                         const updated = current.includes(subject)
                           ? current.filter(s => s !== subject)
                           : [...current, subject]
-                        updateFormData('subjects', updated)
+                        form.setValue('subjects', updated, { shouldValidate: true })
                       }}
                     >
                       {subject}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.subjects && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime" className="text-gray-700 font-medium">Start Time</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => updateFormData('startTime', e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime" className="text-gray-700 font-medium">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => updateFormData('endTime', e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
+                      <FormControl>
+                        <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
+                      <FormControl>
+                        <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -609,66 +705,84 @@ export default function AdminRegistrationAddPage() {
                   {daysOfWeek.map((day) => (
                     <Badge
                       key={day}
-                      variant={formData.availableDays?.includes(day) ? "default" : "outline"}
+                      variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.availableDays?.includes(day)
+                        (form.getValues('availableDays') || []).includes(day)
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
                       onClick={() => {
-                        const current = formData.availableDays || []
+                        const current = form.getValues('availableDays') || []
                         const updated = current.includes(day)
                           ? current.filter(d => d !== day)
                           : [...current, day]
-                        updateFormData('availableDays', updated)
+                        form.setValue('availableDays', updated, { shouldValidate: true })
                       }}
                     >
                       {day}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.availableDays && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
+                )}
               </div>
 
-              <div>
-                <Label className="text-gray-700">Delivery Method</Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="online"
-                      checked={formData.deliveryMethod === 'online'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Online</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="face-to-face"
-                      checked={formData.deliveryMethod === 'face-to-face'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Face-to-Face</span>
-                  </label>
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="online"
+                          checked={field.value === 'online'}
+                          onChange={() => field.onChange('online')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Online</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="face-to-face"
+                          checked={field.value === 'face-to-face'}
+                          onChange={() => field.onChange('face-to-face')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Face-to-Face</span>
+                      </label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="cv" className="text-gray-700 font-medium">CV Upload</Label>
-                <Input
-                  id="cv"
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => updateFormData('cv', e.target.files?.[0] || null)}
-                  className="bg-white border-gray-300 text-gray-900"
-                  required
-                />
-                <p className="text-sm text-gray-400 mt-1">PDF files only, max 5MB</p>
-              </div>
+              <FormField
+                control={form.control}
+                name="cv"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">CV Upload</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="cv"
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => field.onChange(e.target.files?.[0] || null)}
+                        className="bg-white border-gray-300 text-gray-900"
+                      />
+                    </FormControl>
+                    <p className="text-sm text-gray-400 mt-1">PDF files only, max 5MB</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           )}
 
@@ -677,33 +791,49 @@ export default function AdminRegistrationAddPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Tutee Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-gray-700 font-medium">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="5"
-                    max="18"
-                    value={formData.age || ''}
-                    onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-gray-700 font-medium">Gender</Label>
-                  <select
-                    id="gender"
-                    value={formData.gender}
-                    onChange={(e) => updateFormData('gender', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="5"
+                          max="18"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                      <FormControl>
+                        <select
+                          id="gender"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -712,18 +842,21 @@ export default function AdminRegistrationAddPage() {
                   {gradeLevels.map((grade) => (
                     <Badge
                       key={grade}
-                      variant={formData.gradeLevel === grade ? "default" : "outline"}
+                      variant={(form.getValues('gradeLevel') || '') === grade ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.gradeLevel === grade
+                        (form.getValues('gradeLevel') || '') === grade
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
-                      onClick={() => updateFormData('gradeLevel', grade)}
+                      onClick={() => form.setValue('gradeLevel', grade, { shouldValidate: true })}
                     >
                       {grade}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.gradeLevel && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevel.message || 'Select a grade level')}</p>
+                )}
               </div>
 
               <div>
@@ -732,49 +865,56 @@ export default function AdminRegistrationAddPage() {
                   {subjects.map((subject) => (
                     <Badge
                       key={subject}
-                      variant={formData.subjects?.includes(subject) ? "default" : "outline"}
+                      variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.subjects?.includes(subject)
+                        (form.getValues('subjects') || []).includes(subject)
                           ? 'bg-green-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
                       onClick={() => {
-                        const current = formData.subjects || []
+                        const current = form.getValues('subjects') || []
                         const updated = current.includes(subject)
                           ? current.filter(s => s !== subject)
                           : [...current, subject]
-                        updateFormData('subjects', updated)
+                        form.setValue('subjects', updated, { shouldValidate: true })
                       }}
                     >
                       {subject}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.subjects && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime" className="text-gray-700 font-medium">Start Time</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => updateFormData('startTime', e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime" className="text-gray-700 font-medium">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => updateFormData('endTime', e.target.value)}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
+                      <FormControl>
+                        <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
+                      <FormControl>
+                        <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -783,53 +923,63 @@ export default function AdminRegistrationAddPage() {
                   {daysOfWeek.map((day) => (
                     <Badge
                       key={day}
-                      variant={formData.availableDays?.includes(day) ? "default" : "outline"}
+                      variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.availableDays?.includes(day)
+                        (form.getValues('availableDays') || []).includes(day)
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
                       onClick={() => {
-                        const current = formData.availableDays || []
+                        const current = form.getValues('availableDays') || []
                         const updated = current.includes(day)
                           ? current.filter(d => d !== day)
                           : [...current, day]
-                        updateFormData('availableDays', updated)
+                        form.setValue('availableDays', updated, { shouldValidate: true })
                       }}
                     >
                       {day}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.availableDays && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
+                )}
               </div>
 
-              <div>
-                <Label className="text-gray-700">Delivery Method</Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="online"
-                      checked={formData.deliveryMethod === 'online'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Online</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="face-to-face"
-                      checked={formData.deliveryMethod === 'face-to-face'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Face-to-Face</span>
-                  </label>
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="online"
+                          checked={field.value === 'online'}
+                          onChange={() => field.onChange('online')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Online</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="face-to-face"
+                          checked={field.value === 'face-to-face'}
+                          onChange={() => field.onChange('face-to-face')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Face-to-Face</span>
+                      </label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           )}
 
@@ -838,33 +988,49 @@ export default function AdminRegistrationAddPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Training Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-gray-700 font-medium">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="16"
-                    max="65"
-                    value={formData.age || ''}
-                    onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-gray-700 font-medium">Gender</Label>
-                  <select
-                    id="gender"
-                    value={formData.gender}
-                    onChange={(e) => updateFormData('gender', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="16"
+                          max="65"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                      <FormControl>
+                        <select
+                          id="gender"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -873,47 +1039,57 @@ export default function AdminRegistrationAddPage() {
                   {trainingTypes.map((type) => (
                     <Badge
                       key={type}
-                      variant={formData.trainingType === type ? "default" : "outline"}
+                      variant={(form.getValues('trainingType') || '') === type ? "default" : "outline"}
                       className={`cursor-pointer ${
-                        formData.trainingType === type
+                        (form.getValues('trainingType') || '') === type
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                       }`}
-                      onClick={() => updateFormData('trainingType', type)}
+                      onClick={() => form.setValue('trainingType', type, { shouldValidate: true })}
                     >
                       {type}
                     </Badge>
                   ))}
                 </div>
+                {form.formState.errors.trainingType && (
+                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.trainingType.message || 'Select training type')}</p>
+                )}
               </div>
 
-              <div>
-                <Label className="text-gray-700">Delivery Method</Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="online"
-                      checked={formData.deliveryMethod === 'online'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Online</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="face-to-face"
-                      checked={formData.deliveryMethod === 'face-to-face'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Face-to-Face</span>
-                  </label>
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="online"
+                          checked={field.value === 'online'}
+                          onChange={() => field.onChange('online')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Online</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="face-to-face"
+                          checked={field.value === 'face-to-face'}
+                          onChange={() => field.onChange('face-to-face')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Face-to-Face</span>
+                      </label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           )}
 
@@ -922,91 +1098,130 @@ export default function AdminRegistrationAddPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Research Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-gray-700 font-medium">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="18"
-                    max="65"
-                    value={formData.age || ''}
-                    onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-gray-700 font-medium">Gender</Label>
-                  <select
-                    id="gender"
-                    value={formData.gender}
-                    onChange={(e) => updateFormData('gender', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="studyArea" className="text-gray-700 font-medium">Study Area</Label>
-                <textarea
-                  id="studyArea"
-                  value={formData.studyArea}
-                  onChange={(e) => updateFormData('studyArea', e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                  rows={3}
-                  placeholder="Describe your research area or topic..."
-                  required
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="18"
+                          max="65"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                      <FormControl>
+                        <select
+                          id="gender"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="researchLevel" className="text-gray-700 font-medium">Research Level</Label>
-                <select
-                  id="researchLevel"
-                  value={formData.researchLevel}
-                  onChange={(e) => updateFormData('researchLevel', e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                  required
-                >
-                  <option value="">Select Research Level</option>
-                  {researchLevels.map((level) => (
-                    <option key={level} value={level.toLowerCase()}>{level}</option>
-                  ))}
-                </select>
-              </div>
+              <FormField
+                control={form.control}
+                name="studyArea"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Study Area</FormLabel>
+                    <FormControl>
+                      <textarea
+                        id="studyArea"
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        rows={3}
+                        placeholder="Describe your research area or topic..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div>
-                <Label className="text-gray-700">Delivery Method</Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="online"
-                      checked={formData.deliveryMethod === 'online'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Online</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="face-to-face"
-                      checked={formData.deliveryMethod === 'face-to-face'}
-                      onChange={(e) => updateFormData('deliveryMethod', e.target.value)}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-700">Face-to-Face</span>
-                  </label>
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="researchLevel"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Research Level</FormLabel>
+                    <FormControl>
+                      <select
+                        id="researchLevel"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                      >
+                        <option value="">Select Research Level</option>
+                        {researchLevels.map((level) => (
+                          <option key={level} value={level.toLowerCase()}>{level}</option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                    <div className="flex gap-4 mt-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="online"
+                          checked={field.value === 'online'}
+                          onChange={() => field.onChange('online')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Online</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value="face-to-face"
+                          checked={field.value === 'face-to-face'}
+                          onChange={() => field.onChange('face-to-face')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Face-to-Face</span>
+                      </label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           )}
 
@@ -1015,40 +1230,56 @@ export default function AdminRegistrationAddPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Entrepreneurship Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age" className="text-gray-700 font-medium">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="18"
-                    max="65"
-                    value={formData.age || ''}
-                    onChange={(e) => updateFormData('age', parseInt(e.target.value))}
-                    className="bg-white border-gray-300 text-gray-900"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-gray-700 font-medium">Gender</Label>
-                  <select
-                    id="gender"
-                    value={formData.gender}
-                    onChange={(e) => updateFormData('gender', e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          type="number"
+                          min="18"
+                          max="65"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                      <FormControl>
+                        <select
+                          id="gender"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
           )}
 
           <div className="flex gap-4">
             <Button
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
               className="bg-[#245D51] hover:bg-[#245D51]/90 text-white"
             >
@@ -1064,6 +1295,8 @@ export default function AdminRegistrationAddPage() {
           </div>
         </CardContent>
       </Card>
+        </form>
+      </Form>
     )
   }
 
