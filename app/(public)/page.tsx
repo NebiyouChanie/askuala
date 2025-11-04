@@ -35,12 +35,10 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100svh_-_7rem)]">
           <div>
             <h1 className="text-5xl font-bold leading-tight mb-6">
-              We Offer a Services for Every Students,and Every <span className="text-[#FF6652] ">Classroom.</span>
+              Affordable, technology‑driven tutoring, training, and consultancy for every <span className="text-[#FF6652] ">learner and institution</span>.
             </h1>
             <p className="text-xl text-teal-100 mb-8 leading-relaxed">
-              Askuala is a platform that allows educators to create online classes whereby they can store the course
-              materials online; manage assignments, quizzes and exams; monitor due dates; grade results and provide
-              students with feedback all in one place.
+              Askuala Educational Consultancy PLC is an Ethiopian online and hybrid platform delivering on‑demand tutoring, professional trainings, strategic consultations, scholarship search support, research/document reviews, data entry, and more—tailored for students, educators, schools, NGOs, and businesses.
             </p>
             <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white font-semibold px-8 py-3 text-lg">Get Started</Button>
           </div>
@@ -72,9 +70,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Users className="w-8 h-8 text-[#245D51]" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Tutor</h3>
+                <h3 className="text-xl font-semibold mb-4">On‑Demand Tutoring</h3>
                 <p className="text-gray-600">
-                  Get personalized tutoring sessions with experienced educators to help you excel in your studies.
+                  Personalized live support and detailed explanations that build real understanding.
                 </p>
               </CardContent>
             </Card>
@@ -84,9 +82,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Video className="w-8 h-8 text-[#245D51]" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Face to Face</h3>
+                <h3 className="text-xl font-semibold mb-4">Face‑to‑Face Support</h3>
                 <p className="text-gray-600">
-                  Experience interactive face-to-face learning sessions for better engagement and understanding.
+                  In‑person sessions for immediate feedback and highly engaging learning experiences.
                 </p>
               </CardContent>
             </Card>
@@ -96,9 +94,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <BookOpen className="w-8 h-8 text-[#245D51]" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Training</h3>
+                <h3 className="text-xl font-semibold mb-4">Professional Trainings</h3>
                 <p className="text-gray-600">
-                  Comprehensive training programs designed to enhance your skills and knowledge in various subjects.
+                  Workshops for educators and professionals to upskill and stay ahead.
                 </p>
               </CardContent>
             </Card>
@@ -108,9 +106,9 @@ export default function HomePage() {
                 <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Award className="w-8 h-8 text-[#245D51]" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Entrepreneurship</h3>
+                <h3 className="text-xl font-semibold mb-4">Strategic Consultations</h3>
                 <p className="text-gray-600">
-                  Learn essential entrepreneurship skills to start and grow your own successful business ventures.
+                  Curriculum, policy, capacity building, e‑learning advisory, and assessment tools.
                 </p>
               </CardContent>
             </Card>
@@ -139,11 +137,9 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">Explore Thousands of Creative Classes.</h2>
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">Empowering learning and professional growth in Ethiopia</h2>
               <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-                Discover a vast collection of creative and educational courses designed to help you develop new skills,
-                advance your career, and pursue your passions. Our platform offers comprehensive learning experiences
-                with expert instructors.
+                We offer hybrid, affordable, and technology‑enabled services—from tutoring and trainings to research advisory, scholarship support, reviews, data entry, and institutional capacity building—designed for students, educators, schools, NGOs, and businesses.
               </p>
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex -space-x-2">
@@ -175,8 +171,8 @@ export default function HomePage() {
                     <Globe className="w-6 h-6 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Training in Online</h3>
-                    <p className="text-sm text-gray-600">and Skill Pack</p>
+                    <h3 className="font-semibold">Online Tutoring</h3>
+                    <p className="text-sm text-gray-600">Live + asynchronous support</p>
                   </div>
                 </div>
               </CardContent>
@@ -189,8 +185,8 @@ export default function HomePage() {
                     <BarChart3 className="w-6 h-6 text-[#245D51]" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Research</h3>
-                    <p className="text-sm text-gray-600">and Analysis</p>
+                    <h3 className="font-semibold">Research Advisory</h3>
+                    <p className="text-sm text-gray-600">Guidance and reviews</p>
                   </div>
                 </div>
               </CardContent>
@@ -203,8 +199,8 @@ export default function HomePage() {
                     <Smartphone className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Digital</h3>
-                    <p className="text-sm text-gray-600">Marketing</p>
+                    <h3 className="font-semibold">Data & Digital</h3>
+                    <p className="text-sm text-gray-600">Admin and tech solutions</p>
                   </div>
                 </div>
               </CardContent>
@@ -217,8 +213,8 @@ export default function HomePage() {
                     <Code className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Full Stack</h3>
-                    <p className="text-sm text-gray-600">Development</p>
+                    <h3 className="font-semibold">Programming</h3>
+                    <p className="text-sm text-gray-600">Web, APIs, data & AI</p>
                   </div>
                 </div>
               </CardContent>
@@ -231,7 +227,7 @@ export default function HomePage() {
                     <Video className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Videography</h3>
+                    <h3 className="font-semibold">Scholarship Support</h3>
                   </div>
                 </div>
               </CardContent>
@@ -257,7 +253,7 @@ export default function HomePage() {
                     <Camera className="w-6 h-6 text-pink-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Photography</h3>
+                    <h3 className="font-semibold">Document Reviews</h3>
                   </div>
                 </div>
               </CardContent>
@@ -270,7 +266,7 @@ export default function HomePage() {
                     <BookOpen className="w-6 h-6 text-yellow-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Tutorial</h3>
+                    <h3 className="font-semibold">Curriculum & Capacity</h3>
                   </div>
                 </div>
               </CardContent>
@@ -393,7 +389,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">Askuala Online and Face to Face learning</h2>
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">Hybrid, technology‑driven learning and services</h2>
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-teal-500 rounded-full"></div>

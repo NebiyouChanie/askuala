@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const secretKey = process.env.SESSION_SECRET;
+const secretKey = process.env.SESSION_SECRET || 'dev_secret';
 const encodeKey = new TextEncoder().encode(secretKey);
 
 // Session payload type
@@ -44,10 +44,10 @@ export async function createSession(userId: string, firstName: string, lastName:
   // Set the session cookie
   (await cookies()).set('session', session, {
     httpOnly: true,
-    secure: true,  
+    secure: process.env.NODE_ENV === 'production',
     expires: expiresAt,
-    sameSite: 'lax',  
-    path: '/',  
+    sameSite: 'lax',
+    path: '/',
   });
 
 }
@@ -56,12 +56,12 @@ export async function createSession(userId: string, firstName: string, lastName:
 export async function verifySession() {
   const session = (await cookies()).get('session')?.value;
   if (!session) {
-    redirect('/admin');  
+    redirect('/auth/signin');
   }
 
   const payload = await decrypt(session);
   if (!payload) {
-    redirect('/admin');  
+    redirect('/auth/signin');
   }
 
   return { firstName: payload.firstName, lastName: payload.lastName, email: payload.email, role: payload.role };
@@ -70,7 +70,7 @@ export async function verifySession() {
 // Delete session function
 export async function deleteSession() {
   (await cookies()).delete('session');
-  redirect('/auth/singin');  
+  redirect('/auth/signin');
 }
 
 

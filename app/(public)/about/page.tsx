@@ -12,25 +12,25 @@ const whyChooseUs = [
     icon: Target,
     title: "About",
     description:
-      "We are a team of passionate educators dedicated to making learning accessible through diverse channels, fostering a supportive and engaging environment.",
+      "Askuala Educational Consultancy PLC is a leading Ethiopian online and hybrid consultancy transforming learning and professional development with innovative, affordable, technology‑driven services: on‑demand tutoring, professional trainings, strategic consultations, research advisory, scholarship support, research/document reviews, data entry, curriculum development, and institutional capacity building.",
   },
   {
     icon: Eye,
     title: "Vision",
     description:
-      "To be a leading educational platform that empowers individuals with the skills and knowledge they need to succeed in their academic and professional journeys.",
+      "To become Ethiopia’s premier educational consultancy and EdTech provider by 2030, delivering tutoring, training, consultations, scholarship support, research/document reviews, data entry, and related services to foster an inclusive, knowledge‑driven society with regional impact in East Africa.",
   },
   {
     icon: Compass,
     title: "Mission",
     description:
-      "To deliver exceptional online courses that cater to diverse learning styles, enabling students to achieve their academic and professional goals through innovative and engaging content.",
+      "We encourage curiosity, enlighten through expert solutions, and empower students, educators, and institutions with affordable, technology‑enabled services tailored to Ethiopia’s challenges, including overcrowded classrooms and limited rural access. Our holistic approach promotes equitable education and professional growth.",
   },
   {
     icon: Award,
     title: "Value",
     description:
-      "Empowerment: We provide learners with the tools and knowledge they need to succeed in their educational journey. Our courses are designed to be accessible and effective in promoting learning.",
+      "Core Values: Empower, Quality, Innovation, Accessibility, Sustainability.",
   },
 ]
 

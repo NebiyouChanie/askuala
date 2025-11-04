@@ -15,7 +15,7 @@ import { signIn } from '@/lib/actions/auth'
 import { SignInFormSchema, SignInFormValues } from '@/lib/definitions'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from "react-hook-form"
 import { toast } from 'sonner'
@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 export default function SignInForm() {
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(SignInFormSchema),
@@ -50,9 +51,14 @@ export default function SignInForm() {
       }
       //sign-in is successful
       toast.success('Sign-in successful!');
-      const destination = (result as any)?.role === 'admin' ? '/admin' : '/'
-      console.log(destination)
-      router.push(destination)
+      const role = (result as any)?.role
+      const from = searchParams?.get('from') || ''
+      const destination = role === 'admin' ? (from.startsWith('/admin') ? from : '/admin') : (from && !from.startsWith('/admin') ? from : '/')
+      if (typeof window !== 'undefined') {
+        window.location.href = destination
+      } else {
+        router.replace(destination)
+      }
   
     } catch (error) {    
       console.log("~ onSubmit ~ error:", error)

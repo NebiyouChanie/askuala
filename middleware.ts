@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
 
     // Verify role in token
     try {
-      const secretKey = process.env.SESSION_SECRET as string
+      const secretKey = (process.env.SESSION_SECRET || 'dev_secret') as string
       const encodeKey = new TextEncoder().encode(secretKey)
       const { payload } = await jwtVerify(session, encodeKey, { algorithms: ['HS256'] })
       const role = (payload as any)?.role
@@ -26,8 +26,10 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(url)
       }
     } catch (_) {
+      
       const url = req.nextUrl.clone()
       url.pathname = '/auth/signin'
+      url.searchParams.set('from', pathname)
       return NextResponse.redirect(url)
     }
   }
@@ -37,7 +39,7 @@ export async function middleware(req: NextRequest) {
     const session = req.cookies.get('session')?.value
     if (session) {
       try {
-        const secretKey = process.env.SESSION_SECRET as string
+        const secretKey = (process.env.SESSION_SECRET || 'dev_secret') as string
         const encodeKey = new TextEncoder().encode(secretKey)
         const { payload } = await jwtVerify(session, encodeKey, { algorithms: ['HS256'] })
         const role = (payload as any)?.role

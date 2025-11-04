@@ -82,6 +82,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
+      {
+        title: "Instructors",
+        url: "/admin/instructors",
+        icon: Users,
+        items: [
+          {
+            title: "View All",
+            url: "/admin/instructors",
+          },
+          {
+            title: "Add New",
+            url: "/admin/instructors/add",
+          },
+        ],
+      },
        
      
     ],
