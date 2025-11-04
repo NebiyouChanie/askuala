@@ -67,6 +67,16 @@ export default function SignInForm() {
     }
   };
   
+  // Show toast messages from verification redirects
+  const verifyStatus = searchParams?.get('verified')
+  const verifyError = searchParams?.get('verifyError')
+  if (verifyStatus === '1') {
+    toast.success('Email verified successfully. You can now sign in.')
+  }
+  if (verifyError) {
+    toast.error(decodeURIComponent(verifyError))
+  }
+
 
   return (
     <div className="w-full">
@@ -126,6 +136,7 @@ export default function SignInForm() {
                   "Sign In"
                 )}
               </Button>
+              
             </form>
           </Form>
            

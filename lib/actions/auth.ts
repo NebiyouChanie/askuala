@@ -44,14 +44,21 @@ export async function signIn(data: { email: string; password: string }) {
       };
     }
 
-    // 4. Create session
+    // 4. Require verified email
+    if ((user as any)?.is_verified === 0 || (user as any)?.is_verified === false) {
+      return {
+        errors: { email: ['Please verify your email before signing in. Check your inbox.'] },
+      }
+    }
+
+    // 5. Create session
     const role = (user as any)?.role === 'admin' ? 'admin' : 'user'
     const firstName = user.first_name || user.firstName || 'User'
     const lastName = user.last_name || user.lastName || ''
       
     await createSession(user.user_id, firstName, lastName, user.email, role);
 
-    // 5. Return success with role for client redirect
+    // 6. Return success with role for client redirect
     return { success: true, message: 'Signed in successfully', role };
 
   } catch (error) {

@@ -73,8 +73,8 @@ export default function SignupForm() {
         }
         return
       }
-      toast.success('Signup successful!')
-      router.push('/auth/signin')
+      toast.success('Signup successful! Please verify your email.')
+      router.push(`/auth/verify-info?email=${encodeURIComponent(data.email)}`)
   
     } catch (error) { 
       console.log("~ onSubmit ~ error:", error)

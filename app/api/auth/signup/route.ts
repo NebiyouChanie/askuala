@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { create, findOne } from '@/lib/db'
+import { create, findOne, update } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
+import { sendEmail } from '@/lib/sendEmail'
 
 const SignupSchema = z.object({
   first_name: z.string().min(1),
@@ -30,8 +31,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 409 })
     }
 
-    // Create user (parameterized inside create())
-    await create('users', { user_id, first_name, last_name, email, phone, address, password: passwordHash })
+    // Create user with unverified status and verification token
+    const token = randomUUID()
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24) // 24h
+    await create('users', {
+      user_id,
+      first_name,
+      last_name,
+      email,
+      phone,
+      address,
+      password: passwordHash,
+      is_verified: 0,
+      verification_token: token,
+      verification_expires: expiresAt,
+    })
+
+    const origin = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`
+    const verifyUrl = `${origin}/api/auth/verify?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+    const subject = 'Verify your Askuala account'
+    const text = `Welcome to Askuala!\n\nPlease verify your email by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours.`
+    const html = `<p>Welcome to Askuala!</p><p>Please verify your email by clicking the link below:</p><p><a href="${verifyUrl}" target="_blank">Verify my email</a></p><p>This link expires in 24 hours.</p>`
+    try {
+      await sendEmail(email, subject, text, html)
+    } catch {
+      // If email fails, keep user created but allow re-send.
+    }
+
     return NextResponse.json({ success: true, user_id })
   } catch (e) {
     console.error('Signup error', e)
