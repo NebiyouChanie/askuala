@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users, Calendar, Mail, Phone, MapPin } from 'lucide-react'
+import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users, Calendar, Mail, Phone, MapPin, Eye } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 
 interface RegistrationData {
@@ -61,6 +63,8 @@ const registrationTypes = [
 ]
 
 export default function AdminRegistrationsPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedType, setSelectedType] = useState<string>('')
   const [registrations, setRegistrations] = useState<RegistrationData[]>([])
   const [loading, setLoading] = useState(false)
@@ -132,8 +136,22 @@ export default function AdminRegistrationsPage() {
   const handleTypeSelect = (type: string) => {
     setSelectedType(type)
     setCurrentPage(1)
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.set('type', type)
+    router.replace(`/admin/registrations?${params.toString()}`)
     fetchRegistrations(type, 1)
   }
+
+  useEffect(() => {
+    const t = searchParams?.get('type') || ''
+    const valid = registrationTypes.some((rt) => rt.id === t)
+    if (valid) {
+      setSelectedType(t)
+      setCurrentPage(1)
+      fetchRegistrations(t, 1)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -243,7 +261,7 @@ export default function AdminRegistrationsPage() {
           })}
         </div>
 
-        {/* Results Section */}
+        {/* Results Section (Table) */}
         {selectedType && (
           <Card className="bg-white">
             <CardHeader>
@@ -267,109 +285,63 @@ export default function AdminRegistrationsPage() {
                   <p className="text-gray-600 text-lg">No registrations found</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {registrations.map((registration) => {
-                    const details = getRegistrationDetails(registration)
-                    const IconComponent = registrationTypes.find(t => t.id === registration.type)?.icon || Users
-                    
-                    return (
-                      <Card key={registration.id} className="bg-white border-gray-200">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 ${registrationTypes.find(t => t.id === registration.type)?.color} rounded-lg flex items-center justify-center`}>
-                                <IconComponent className="w-6 h-6 text-white" />
-                              </div>
-                              <div>
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                  {registration.user.first_name} {registration.user.last_name}
-                                </h3>
-                                <p className="text-gray-600">{registration.type.charAt(0).toUpperCase() + registration.type.slice(1)} Registration</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-gray-600 border-gray-300">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                {new Date(registration.created_at).toLocaleDateString()}
-                              </Badge>
-                              {registration.payment_status && (
-                                <Badge className={registration.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                        
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {registrations.map((registration) => {
+                        const details = getRegistrationDetails(registration)
+                        return (
+                          <tr key={registration.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                              {registration.user.first_name} {registration.user.last_name}
+                              <div className="text-xs text-gray-500">{registration.type.charAt(0).toUpperCase() + registration.type.slice(1)}</div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{registration.user.email}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{registration.user.phone}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{registration.user.address}</td>
+                            
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {new Date(registration.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                              {registration.payment_status ? (
+                                <span className={registration.payment_status === 'paid' ? 'text-green-700 bg-green-100 px-2 py-1 rounded' : 'text-yellow-700 bg-yellow-100 px-2 py-1 rounded'}>
                                   {registration.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
-                                </Badge>
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">N/A</span>
                               )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* User Information */}
-                            <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contact Info</h4>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Mail className="w-4 h-4" />
-                                  <span className="text-sm">{registration.user.email}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Phone className="w-4 h-4" />
-                                  <span className="text-sm">{registration.user.phone}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <MapPin className="w-4 h-4" />
-                                  <span className="text-sm">{registration.user.address}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Registration Details */}
-                            <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Registration Details</h4>
-                              <div className="space-y-2">
-                                {Object.entries(details).map(([key, value]) => (
-                                  <div key={key} className="flex justify-between">
-                                    <span className="text-gray-600 text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                                    <span className="text-gray-900 text-sm">{value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Actions</h4>
-                              <div className="space-y-2">
-                                {registration.type === 'tutors' && registration.data.cv_path && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="w-full"
-                                    onClick={() => downloadCV(registration.data.cv_path, registration.user.first_name, registration.user.last_name)}
-                                  >
-                                    Download CV
-                                  </Button>
-                                )}
-                                <Button size="sm" variant="outline" className="w-full">
-                                  Edit
-                                </Button>
-                                <Button size="sm" variant="destructive" className="w-full">
-                                  Delete
-                                </Button>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                              <div className="inline-flex gap-2 items-center">
+                                <Link href={`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}`} className="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 hover:bg-gray-50">
+                                  <Eye className="w-4 h-4 text-gray-700" />
+                                </Link>
+                                <Button size="sm" variant="outline">Edit</Button>
+                                <Button size="sm" variant="destructive">Delete</Button>
                                 {registration.payment_status !== 'paid' && (
-                                  <Button 
-                                    size="sm" 
-                                    className="w-full bg-[#245D51] hover:bg-[#245D51]/90 text-white"
-                                    onClick={() => markAsPaid(registration.type, registration.id)}
-                                  >
-                                    Mark as Paid
-                                  </Button>
+                                  <Button size="sm" className="bg-[#245D51] hover:bg-[#245D51]/90 text-white" onClick={() => markAsPaid(registration.type, registration.id)}>Paid</Button>
                                 )}
                               </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-          </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>

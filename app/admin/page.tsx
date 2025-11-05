@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users } from "lucide-react"
+import { headers } from 'next/headers'
 
 async function getStats(): Promise<{
   tutors: number
@@ -10,7 +11,11 @@ async function getStats(): Promise<{
   instructors: number
 }> {
   try {
-    const res = await fetch('/api/admin/stats', { cache: 'no-store' })
+    const hdrs = headers()
+    const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
+    const proto = hdrs.get('x-forwarded-proto') || 'http'
+    const base = `${proto}://${host}`
+    const res = await fetch(`${base}/api/admin/stats`, { cache: 'no-store' })
     if (!res.ok) throw new Error('Failed to load stats')
     const json = await res.json()
     return json?.data || { tutors: 0, tutees: 0, trainings: 0, researches: 0, entrepreneurships: 0, instructors: 0 }
