@@ -5,7 +5,7 @@ import { query, queryOne, create, update, remove } from '@/lib/db'
 // Validation schemas
 const TutorCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"]),
   gradeLevels: z.array(z.string()).min(1, "Select at least one grade level"),
   subjects: z.array(z.string()).min(1, "Select at least one subject"),

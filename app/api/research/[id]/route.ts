@@ -4,11 +4,11 @@ import { queryOne, update, remove } from '@/lib/db'
 
 const ResearchUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old").optional(),
+  age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
   studyArea: z.string().min(1, "Research area is required").optional(),
   researchLevel: z.enum(["undergraduate", "graduate", "phd", "professional"]).optional(),
-  deliveryMethod: z.enum(["online", "face-to-face"]).optional(),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
 })
 
@@ -41,6 +41,9 @@ export async function GET(
         r.study_area,
         r.research_level,
         r.delivery_method,
+        r.instructor_id,
+        r.researchgate_id,
+        r.orcid,
         r.payment_status,
         r.created_at,
         r.updated_at
@@ -110,6 +113,9 @@ export async function PUT(
     if (validatedData.studyArea) updateData.study_area = validatedData.studyArea
     if (validatedData.researchLevel) updateData.research_level = validatedData.researchLevel
     if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
+    if (typeof (body as any).instructorId !== 'undefined') updateData.instructor_id = (body as any).instructorId || null
+    if (typeof (body as any).researchGateId !== 'undefined') updateData.researchgate_id = (body as any).researchGateId || null
+    if (typeof (body as any).orcid !== 'undefined') updateData.orcid = (body as any).orcid || null
 
     // Update research registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus

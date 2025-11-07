@@ -92,6 +92,26 @@ export default function AdminRegistrationsPage() {
     }
   }
 
+  const markAsUnpaid = async (type: string, id: string) => {
+    try {
+      const res = await fetch(`/api/${type}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: 'unpaid' })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to update payment status')
+        return
+      }
+      toast.success('Marked as unpaid')
+      fetchRegistrations(type, currentPage)
+    } catch (e) {
+      console.error('Mark as unpaid error:', e)
+      toast.error('Failed to update payment status')
+    }
+  }
+
   const fetchRegistrations = async (type: string, page: number = 1) => {
     if (!type) return
     
@@ -230,7 +250,7 @@ export default function AdminRegistrationsPage() {
     <div className="min-h-screen   p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Registration Management</h1>
+          <h1 className="text-4xl font-bold  mb-2">Registration Management</h1>
           <p className="text-gray-400">Manage all course registrations and user data</p>
       </div>
 
@@ -331,8 +351,10 @@ export default function AdminRegistrationsPage() {
                                 </Link>
                                 <Button size="sm" variant="outline">Edit</Button>
                                 <Button size="sm" variant="destructive">Delete</Button>
-                                {registration.payment_status !== 'paid' && (
+                                {registration.payment_status !== 'paid' ? (
                                   <Button size="sm" className="bg-[#245D51] hover:bg-[#245D51]/90 text-white" onClick={() => markAsPaid(registration.type, registration.id)}>Paid</Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => markAsUnpaid(registration.type, registration.id)}>Unpaid</Button>
                                 )}
                               </div>
                             </td>

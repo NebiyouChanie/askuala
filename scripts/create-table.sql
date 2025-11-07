@@ -109,3 +109,13 @@ CREATE TABLE entrepreneurships (
     CONSTRAINT fk_entrepreneurships_user FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE CASCADE
 );
+
+
+-- Feedback messages submitted from the public Contact page
+CREATE TABLE feedbacks (
+    feedback_id CHAR(36) PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

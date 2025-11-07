@@ -4,8 +4,9 @@ import { queryOne, update, remove } from '@/lib/db'
 
 const EntrepreneurshipUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old").optional(),
+  age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
 })
 
@@ -35,6 +36,8 @@ export async function GET(
         u.address,
         e.age,
         e.gender,
+        e.instructor_id,
+        e.delivery_method,
         e.payment_status,
         e.created_at,
         e.updated_at
@@ -101,6 +104,8 @@ export async function PUT(
     
     if (validatedData.age) updateData.age = validatedData.age
     if (validatedData.gender) updateData.gender = validatedData.gender
+    if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
+    if (typeof (body as any).instructorId !== 'undefined') updateData.instructor_id = (body as any).instructorId || null
 
     // Update entrepreneurship registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus

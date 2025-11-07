@@ -97,6 +97,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
+      {
+        title: "Feedback",
+        url: "/admin/feedback",
+        icon: Lightbulb,
+      },
        
      
     ],

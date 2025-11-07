@@ -120,9 +120,9 @@ export default function AdminInstructorAddPage() {
   }
 
   return (
-    <div className="p-2">
+    <div className="p-2 max-w-6xl">
       <div className="mb-4">
-        <h1 className="text-2xl font-semibold">Add Instructor</h1>
+        <h1 className="text-3xl font-bold text-gray-900 my-4">Add Instructor</h1>
       </div>
       <Card>
         <CardHeader>

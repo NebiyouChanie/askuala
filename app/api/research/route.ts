@@ -5,11 +5,35 @@ import { query, queryOne, create, update, remove } from '@/lib/db'
 // Validation schemas
 const ResearchCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"]),
   studyArea: z.string().min(1, "Research area is required"),
   researchLevel: z.enum(["undergraduate", "graduate", "phd", "professional"]),
-  deliveryMethod: z.enum(["online", "face-to-face"]),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]),
+  researchGateId: z
+    .string()
+    .trim()
+    .transform((v) => (v === '' ? undefined : v))
+    .refine(
+      (v) =>
+        v === undefined ||
+        /^(https?:\/\/)?(www\.)?researchgate\.net\/.+$/i.test(String(v)) ||
+        /^[A-Za-z0-9_.-]{3,}$/i.test(String(v)),
+      { message: 'Enter a valid ResearchGate profile URL or username' }
+    )
+    .optional(),
+  orcid: z
+    .string()
+    .trim()
+    .transform((v) => (v === '' ? undefined : v))
+    .refine(
+      (v) =>
+        v === undefined ||
+        /^(https?:\/\/)?(www\.)?orcid\.org\/(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)) ||
+        /^(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)),
+      { message: 'Enter a valid ORCID (e.g., 0000-0002-1825-0097) or profile URL' }
+    )
+    .optional(),
 })
 
 const ResearchUpdateSchema = ResearchCreateSchema.partial().extend({
@@ -75,6 +99,8 @@ export async function GET(request: NextRequest) {
         r.study_area,
         r.research_level,
         r.delivery_method,
+        r.researchgate_id,
+        r.orcid,
         r.payment_status,
         r.created_at,
         r.updated_at
@@ -148,6 +174,8 @@ export async function POST(request: NextRequest) {
       study_area: validatedData.studyArea,
       research_level: validatedData.researchLevel,
       delivery_method: validatedData.deliveryMethod,
+      researchgate_id: validatedData.researchGateId || null,
+      orcid: validatedData.orcid || null,
     }
 
     await create('researches', researchData)

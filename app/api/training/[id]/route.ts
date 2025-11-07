@@ -4,10 +4,10 @@ import { queryOne, update, remove } from '@/lib/db'
 
 const TrainingUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
-  age: z.number().min(16, "Must be at least 16 years old").max(65, "Must be under 65 years old").optional(),
+  age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
   trainingType: z.string().min(1, "Training type is required").optional(),
-  deliveryMethod: z.enum(["online", "face-to-face"]).optional(),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
 })
 
@@ -39,6 +39,7 @@ export async function GET(
         t.gender,
         t.training_type,
         t.delivery_method,
+        t.instructor_id,
         t.payment_status,
         t.created_at,
         t.updated_at
@@ -107,6 +108,7 @@ export async function PUT(
     if (validatedData.gender) updateData.gender = validatedData.gender
     if (validatedData.trainingType) updateData.training_type = validatedData.trainingType
     if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
+    if (typeof (body as any).instructorId !== 'undefined') updateData.instructor_id = (body as any).instructorId || null
 
     // Update training registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus

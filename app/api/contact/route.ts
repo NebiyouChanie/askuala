@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { sendEmail } from "@/lib/sendEmail"
+import { create } from "@/lib/db"
 
 const ContactSchema = z.object({
   name: z.string().min(1, "Name is required").max(150),
@@ -38,6 +39,20 @@ ${message}`
     `
 
     await sendEmail(to, subject, text, html)
+
+    // Persist feedback
+    try {
+      await create('feedbacks', {
+        feedback_id: (global as any).crypto?.randomUUID?.() || require('crypto').randomUUID(),
+        name,
+        email,
+        message,
+        created_at: new Date(),
+      })
+    } catch (e) {
+      // non-fatal: email already sent
+      console.error('Failed to save feedback:', e)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

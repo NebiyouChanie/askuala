@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,6 +71,26 @@ const trainingTypes = ['Software', 'Coding', 'Kaizen', 'Accounting', 'Graphics',
 const researchLevels = ['Undergraduate', 'Graduate', 'PhD', 'Professional']
 
 export default function AdminRegistrationAddPage() {
+  type MinimalInstructor = { instructor_id: string; first_name: string; last_name: string }
+  const [instructors, setInstructors] = useState<MinimalInstructor[]>([])
+  const [loadingInstructors, setLoadingInstructors] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingInstructors(true)
+      try {
+        const res = await fetch('/api/admin/instructors?limit=1000', { cache: 'no-store' })
+        const data = await res.json()
+        if (res.ok && data.success) {
+          setInstructors((data.data || []).map((i: any) => ({ instructor_id: i.instructor_id, first_name: i.first_name, last_name: i.last_name })))
+        }
+      } catch (e) {
+      } finally {
+        setLoadingInstructors(false)
+      }
+    }
+    load()
+  }, [])
   const [selectedCourse, setSelectedCourse] = useState<string>('')
   const [searchEmail, setSearchEmail] = useState('')
   const [searchResults, setSearchResults] = useState<User[]>([])
@@ -101,6 +121,31 @@ export default function AdminRegistrationAddPage() {
     trainingType: z.string().optional(),
     studyArea: z.string().optional(),
     researchLevel: z.string().optional(),
+    instructorId: z.string().optional(),
+    researchGateId: z
+      .string()
+      .trim()
+      .transform((v) => (v === '' ? undefined : v))
+      .refine(
+        (v) =>
+          v === undefined ||
+          /^(https?:\/\/)?(www\.)?researchgate\.net\/.+$/i.test(String(v)) ||
+          /^[A-Za-z0-9_.-]{3,}$/i.test(String(v)),
+        { message: 'Enter a valid ResearchGate profile URL or username' }
+      )
+      .optional(),
+    orcid: z
+      .string()
+      .trim()
+      .transform((v) => (v === '' ? undefined : v))
+      .refine(
+        (v) =>
+          v === undefined ||
+          /^(https?:\/\/)?(www\.)?orcid\.org\/(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)) ||
+          /^(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)),
+        { message: 'Enter a valid ORCID (e.g., 0000-0002-1825-0097) or profile URL' }
+      )
+      .optional(),
     cv: z.any().optional(),
   })
 
@@ -128,6 +173,9 @@ export default function AdminRegistrationAddPage() {
       trainingType: '',
       studyArea: '',
       researchLevel: '',
+      instructorId: '',
+      researchGateId: '',
+      orcid: '',
       cv: null,
     },
   })
@@ -242,7 +290,8 @@ export default function AdminRegistrationAddPage() {
             phone: data.phone,
             address: data.address,
             password: data.password,
-            confirmPassword: data.confirmPassword
+            confirmPassword: data.confirmPassword,
+            adminCreate: true
           })
         })
 
@@ -343,7 +392,8 @@ export default function AdminRegistrationAddPage() {
           if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            trainingType: data.trainingType
+            trainingType: data.trainingType,
+            instructorId: data.instructorId || undefined,
           }
           break
         case 'research':
@@ -355,13 +405,17 @@ export default function AdminRegistrationAddPage() {
           courseData = {
             ...courseData,
             studyArea: data.studyArea,
-            researchLevel: data.researchLevel
+            researchLevel: data.researchLevel,
+            instructorId: data.instructorId || undefined,
+            researchGateId: data.researchGateId,
+            orcid: data.orcid,
           }
           break
         case 'entrepreneurship':
           if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
           if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
           // No additional fields needed
+          courseData = { ...courseData, instructorId: data.instructorId || undefined, deliveryMethod: data.deliveryMethod }
           break
       }
 
@@ -369,7 +423,6 @@ export default function AdminRegistrationAddPage() {
         throw new Error('Validation failed')
       }
 
-      console.log('🚀 Sending course data:', courseData)
       
       const courseResponse = await fetch(`/api/${selectedCourse}`, {
         method: 'POST',
@@ -424,762 +477,647 @@ export default function AdminRegistrationAddPage() {
     if (!selectedCourse) return null
 
     return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="text-gray-900">
-            {courseTypes.find(c => c.id === selectedCourse)?.name}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* User Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">First Name</FormLabel>
-                    <FormControl>
-                      <Input id="firstName" className="bg-white border-gray-300 text-gray-900" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Last Name</FormLabel>
-                    <FormControl>
-                      <Input id="lastName" className="bg-white border-gray-300 text-gray-900" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
-                    <FormControl>
-                      <Input id="email" type="email" className="bg-white border-gray-300 text-gray-900" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Phone</FormLabel>
-                    <FormControl>
-                      <Input id="phone" className="bg-white border-gray-300 text-gray-900" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2 space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Address</FormLabel>
-                    <FormControl>
-                      <Input id="address" className="bg-white border-gray-300 text-gray-900" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Password fields for new users */}
-            {!selectedUser && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-md font-semibold text-gray-900">Password</h4>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={generatePassword}
-                    className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
-                  >
-                    Generate Password
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className='max-w-5xl'>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="text-gray-900">
+              {courseTypes.find(c => c.id === selectedCourse)?.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* User Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">User Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="password"
+                  name="firstName"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
-                      <div className="relative">
+                      <FormLabel className="text-gray-700 font-medium">First Name</FormLabel>
+                      <FormControl>
+                        <Input id="firstName" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Last Name</FormLabel>
+                      <FormControl>
+                        <Input id="lastName" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
+                      <FormControl>
+                        <Input id="email" type="email" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Phone</FormLabel>
+                      <FormControl>
+                        <Input id="phone" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2 space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Address</FormLabel>
+                      <FormControl>
+                        <Input id="address" className="bg-white border-gray-300 text-gray-900" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Password fields for new users */}
+              {!selectedUser && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-md font-semibold text-gray-900">Password</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generatePassword}
+                      className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                    >
+                      Generate Password
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input id="password" type={showPassword ? 'text' : 'password'} className="bg-white border-gray-300 text-gray-900 pr-10" {...field} />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
                         <FormControl>
-                          <Input id="password" type={showPassword ? 'text' : 'password'} className="bg-white border-gray-300 text-gray-900 pr-10" {...field} />
+                          <Input id="confirmPassword" type="password" className="bg-white border-gray-300 text-gray-900" {...field} />
                         </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Course-specific fields */}
+            {selectedCourse === 'tutors' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Tutor Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                        <FormControl>
+                          <select
+                            id="gender"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700">Grade Levels</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {gradeLevelRanges.map((grade) => (
+                      <Badge
+                        key={grade}
+                        variant={(form.getValues('gradeLevels') || []).includes(grade) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('gradeLevels') || []).includes(grade)
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => {
+                          const current = form.getValues('gradeLevels') || []
+                          const updated = current.includes(grade)
+                            ? current.filter(g => g !== grade)
+                            : [...current, grade]
+                          form.setValue('gradeLevels', updated, { shouldValidate: true })
+                        }}
+                      >
+                        {grade}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.gradeLevels && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevels.message || 'Select at least one grade range')}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-gray-700">Subjects</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {subjects.map((subject) => (
+                      <Badge
+                        key={subject}
+                        variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('subjects') || []).includes(subject)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => {
+                          const current = form.getValues('subjects') || []
+                          const updated = current.includes(subject)
+                            ? current.filter(s => s !== subject)
+                            : [...current, subject]
+                          form.setValue('subjects', updated, { shouldValidate: true })
+                        }}
+                      >
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.subjects && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
+                        <FormControl>
+                          <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
+                        <FormControl>
+                          <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700">Available Days</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {daysOfWeek.map((day) => (
+                      <Badge
+                        key={day}
+                        variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('availableDays') || []).includes(day)
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => {
+                          const current = form.getValues('availableDays') || []
+                          const updated = current.includes(day)
+                            ? current.filter(d => d !== day)
+                            : [...current, day]
+                          form.setValue('availableDays', updated, { shouldValidate: true })
+                        }}
+                      >
+                        {day}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.availableDays && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
+                  )}
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="deliveryMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                      <div className="flex gap-4 mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="online"
+                            checked={field.value === 'online'}
+                            onChange={() => field.onChange('online')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="face-to-face"
+                            checked={field.value === 'face-to-face'}
+                            onChange={() => field.onChange('face-to-face')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="deliveryMethod"
+                            value="online-&-face-to-face"
+                            checked={field.value === 'online-&-face-to-face'}
+                            onChange={() => field.onChange('online-&-face-to-face')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online & Face-to-Face</span>
+                        </label>
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="confirmPassword"
+                  name="cv"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
+                      <FormLabel className="text-gray-700 font-medium">CV Upload</FormLabel>
                       <FormControl>
-                        <Input id="confirmPassword" type="password" className="bg-white border-gray-300 text-gray-900" {...field} />
+                        <Input
+                          id="cv"
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => field.onChange(e.target.files?.[0] || null)}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
                       </FormControl>
+                      <p className="text-sm text-gray-400 mt-1">PDF files only, max 5MB</p>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                </div>
               </div>
             )}
-          </div>
 
-          {/* Course-specific fields */}
-          {selectedCourse === 'tutors' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Tutor Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="18"
-                          max="65"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                      <FormControl>
-                        <select
-                          id="gender"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Grade Levels</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {gradeLevelRanges.map((grade) => (
-                    <Badge
-                      key={grade}
-                      variant={(form.getValues('gradeLevels') || []).includes(grade) ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('gradeLevels') || []).includes(grade)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => {
-                        const current = form.getValues('gradeLevels') || []
-                        const updated = current.includes(grade)
-                          ? current.filter(g => g !== grade)
-                          : [...current, grade]
-                        form.setValue('gradeLevels', updated, { shouldValidate: true })
-                      }}
-                    >
-                      {grade}
-                    </Badge>
-                  ))}
+            {/* Tutee Form */}
+            {selectedCourse === 'tutees' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Tutee Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                        <FormControl>
+                          <select
+                            id="gender"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                {form.formState.errors.gradeLevels && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevels.message || 'Select at least one grade range')}</p>
-                )}
-              </div>
 
-              <div>
-                <Label className="text-gray-700">Subjects</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {subjects.map((subject) => (
-                    <Badge
-                      key={subject}
-                      variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('subjects') || []).includes(subject)
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => {
-                        const current = form.getValues('subjects') || []
-                        const updated = current.includes(subject)
-                          ? current.filter(s => s !== subject)
-                          : [...current, subject]
-                        form.setValue('subjects', updated, { shouldValidate: true })
-                      }}
-                    >
-                      {subject}
-                    </Badge>
-                  ))}
-                </div>
-                {form.formState.errors.subjects && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="startTime"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
-                      <FormControl>
-                        <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div>
+                  <Label className="text-gray-700">Grade Level</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {gradeLevels.map((grade) => (
+                      <Badge
+                        key={grade}
+                        variant={(form.getValues('gradeLevel') || '') === grade ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('gradeLevel') || '') === grade
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => form.setValue('gradeLevel', grade, { shouldValidate: true })}
+                      >
+                        {grade}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.gradeLevel && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevel.message || 'Select a grade level')}</p>
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endTime"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
-                      <FormControl>
-                        <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Available Days</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {daysOfWeek.map((day) => (
-                    <Badge
-                      key={day}
-                      variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('availableDays') || []).includes(day)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => {
-                        const current = form.getValues('availableDays') || []
-                        const updated = current.includes(day)
-                          ? current.filter(d => d !== day)
-                          : [...current, day]
-                        form.setValue('availableDays', updated, { shouldValidate: true })
-                      }}
-                    >
-                      {day}
-                    </Badge>
-                  ))}
                 </div>
-                {form.formState.errors.availableDays && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
-                )}
-              </div>
+
+                <div>
+                  <Label className="text-gray-700">Subjects</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {subjects.map((subject) => (
+                      <Badge
+                        key={subject}
+                        variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('subjects') || []).includes(subject)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => {
+                          const current = form.getValues('subjects') || []
+                          const updated = current.includes(subject)
+                            ? current.filter(s => s !== subject)
+                            : [...current, subject]
+                          form.setValue('subjects', updated, { shouldValidate: true })
+                        }}
+                      >
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.subjects && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
+                        <FormControl>
+                          <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
+                        <FormControl>
+                          <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700">Available Days</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {daysOfWeek.map((day) => (
+                      <Badge
+                        key={day}
+                        variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('availableDays') || []).includes(day)
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => {
+                          const current = form.getValues('availableDays') || []
+                          const updated = current.includes(day)
+                            ? current.filter(d => d !== day)
+                            : [...current, day]
+                          form.setValue('availableDays', updated, { shouldValidate: true })
+                        }}
+                      >
+                        {day}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.availableDays && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
+                  )}
+                </div>
 
               <FormField
                 control={form.control}
                 name="deliveryMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                    <div className="flex gap-4 mt-2">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="online"
-                          checked={field.value === 'online'}
-                          onChange={() => field.onChange('online')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Online</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="face-to-face"
-                          checked={field.value === 'face-to-face'}
-                          onChange={() => field.onChange('face-to-face')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Face-to-Face</span>
-                      </label>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const value = field.value || ''
+                  const onlineChecked = value === 'online' || value === 'online-&-face-to-face'
+                  const f2fChecked = value === 'face-to-face' || value === 'online-&-face-to-face'
+                  const setFrom = (nextOnline: boolean, nextF2F: boolean) => {
+                    let next = ''
+                    if (nextOnline && nextF2F) next = 'online-&-face-to-face'
+                    else if (nextOnline) next = 'online'
+                    else if (nextF2F) next = 'face-to-face'
+                    field.onChange(next)
+                  }
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                      <div className="flex gap-6 mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={onlineChecked}
+                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={f2fChecked}
+                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
               />
+              </div>
+            )}
+
+            {/* Training Form */}
+            {selectedCourse === 'training' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Training Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                        <FormControl>
+                          <select
+                            id="gender"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
               <FormField
                 control={form.control}
-                name="cv"
+                name="instructorId"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">CV Upload</FormLabel>
-                    <FormControl>
-                      <Input
-                        id="cv"
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => field.onChange(e.target.files?.[0] || null)}
-                        className="bg-white border-gray-300 text-gray-900"
-                      />
-                    </FormControl>
-                    <p className="text-sm text-gray-400 mt-1">PDF files only, max 5MB</p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Tutee Form */}
-          {selectedCourse === 'tutees' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Tutee Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="5"
-                          max="18"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                      <FormControl>
-                        <select
-                          id="gender"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Grade Level</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {gradeLevels.map((grade) => (
-                    <Badge
-                      key={grade}
-                      variant={(form.getValues('gradeLevel') || '') === grade ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('gradeLevel') || '') === grade
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => form.setValue('gradeLevel', grade, { shouldValidate: true })}
-                    >
-                      {grade}
-                    </Badge>
-                  ))}
-                </div>
-                {form.formState.errors.gradeLevel && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.gradeLevel.message || 'Select a grade level')}</p>
-                )}
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Subjects</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {subjects.map((subject) => (
-                    <Badge
-                      key={subject}
-                      variant={(form.getValues('subjects') || []).includes(subject) ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('subjects') || []).includes(subject)
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => {
-                        const current = form.getValues('subjects') || []
-                        const updated = current.includes(subject)
-                          ? current.filter(s => s !== subject)
-                          : [...current, subject]
-                        form.setValue('subjects', updated, { shouldValidate: true })
-                      }}
-                    >
-                      {subject}
-                    </Badge>
-                  ))}
-                </div>
-                {form.formState.errors.subjects && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.subjects.message || 'Select at least one subject')}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="startTime"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Start Time</FormLabel>
-                      <FormControl>
-                        <Input id="startTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endTime"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">End Time</FormLabel>
-                      <FormControl>
-                        <Input id="endTime" type="time" className="bg-white border-gray-300 text-gray-900" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Available Days</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {daysOfWeek.map((day) => (
-                    <Badge
-                      key={day}
-                      variant={(form.getValues('availableDays') || []).includes(day) ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('availableDays') || []).includes(day)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => {
-                        const current = form.getValues('availableDays') || []
-                        const updated = current.includes(day)
-                          ? current.filter(d => d !== day)
-                          : [...current, day]
-                        form.setValue('availableDays', updated, { shouldValidate: true })
-                      }}
-                    >
-                      {day}
-                    </Badge>
-                  ))}
-                </div>
-                {form.formState.errors.availableDays && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.availableDays.message || 'Select available days')}</p>
-                )}
-              </div>
-
-              <FormField
-                control={form.control}
-                name="deliveryMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                    <div className="flex gap-4 mt-2">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="online"
-                          checked={field.value === 'online'}
-                          onChange={() => field.onChange('online')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Online</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="face-to-face"
-                          checked={field.value === 'face-to-face'}
-                          onChange={() => field.onChange('face-to-face')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Face-to-Face</span>
-                      </label>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Training Form */}
-          {selectedCourse === 'training' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Training Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="16"
-                          max="65"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                      <FormControl>
-                        <select
-                          id="gender"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Training Type</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {trainingTypes.map((type) => (
-                    <Badge
-                      key={type}
-                      variant={(form.getValues('trainingType') || '') === type ? "default" : "outline"}
-                      className={`cursor-pointer ${
-                        (form.getValues('trainingType') || '') === type
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                      onClick={() => form.setValue('trainingType', type, { shouldValidate: true })}
-                    >
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-                {form.formState.errors.trainingType && (
-                  <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.trainingType.message || 'Select training type')}</p>
-                )}
-              </div>
-
-              <FormField
-                control={form.control}
-                name="deliveryMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                    <div className="flex gap-4 mt-2">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="online"
-                          checked={field.value === 'online'}
-                          onChange={() => field.onChange('online')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Online</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="deliveryMethod"
-                          value="face-to-face"
-                          checked={field.value === 'face-to-face'}
-                          onChange={() => field.onChange('face-to-face')}
-                          className="mr-2"
-                        />
-                        <span className="text-gray-700">Face-to-Face</span>
-                      </label>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          {/* Research Form */}
-          {selectedCourse === 'research' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Research Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="18"
-                          max="65"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                      <FormControl>
-                        <select
-                          id="gender"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="studyArea"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Study Area</FormLabel>
-                    <FormControl>
-                      <textarea
-                        id="studyArea"
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        rows={3}
-                        placeholder="Describe your research area or topic..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="researchLevel"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Research Level</FormLabel>
+                    <FormLabel className="text-gray-700 font-medium">Assign Instructor (optional)</FormLabel>
                     <FormControl>
                       <select
-                        id="researchLevel"
+                        id="trainingInstructor"
                         value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value)}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
                       >
-                        <option value="">Select Research Level</option>
-                        {researchLevels.map((level) => (
-                          <option key={level} value={level.toLowerCase()}>{level}</option>
+                        <option value="">No Instructor Assigned</option>
+                        {instructors.map((ins) => (
+                          <option key={ins.instructor_id} value={ins.instructor_id}>
+                            {ins.first_name} {ins.last_name}
+                          </option>
                         ))}
                       </select>
                     </FormControl>
@@ -1188,6 +1126,327 @@ export default function AdminRegistrationAddPage() {
                 )}
               />
 
+                <div>
+                  <Label className="text-gray-700">Training Type</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {trainingTypes.map((type) => (
+                      <Badge
+                        key={type}
+                        variant={(form.getValues('trainingType') || '') === type ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          (form.getValues('trainingType') || '') === type
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onClick={() => form.setValue('trainingType', type, { shouldValidate: true })}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                  {form.formState.errors.trainingType && (
+                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.trainingType.message || 'Select training type')}</p>
+                  )}
+                </div>
+
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => {
+                  const value = field.value || ''
+                  const onlineChecked = value === 'online' || value === 'online-&-face-to-face'
+                  const f2fChecked = value === 'face-to-face' || value === 'online-&-face-to-face'
+                  const setFrom = (nextOnline: boolean, nextF2F: boolean) => {
+                    let next = ''
+                    if (nextOnline && nextF2F) next = 'online-&-face-to-face'
+                    else if (nextOnline) next = 'online'
+                    else if (nextF2F) next = 'face-to-face'
+                    field.onChange(next)
+                  }
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                      <div className="flex gap-6 mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={onlineChecked}
+                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={f2fChecked}
+                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+              </div>
+            )}
+
+            {/* Research Form */}
+            {selectedCourse === 'research' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Research Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                        <FormControl>
+                          <select
+                            id="gender"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+              <FormField
+                control={form.control}
+                name="instructorId"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Assign Instructor (optional)</FormLabel>
+                    <FormControl>
+                      <select
+                        id="researchInstructor"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                      >
+                        <option value="">No Instructor Assigned</option>
+                        {instructors.map((ins) => (
+                          <option key={ins.instructor_id} value={ins.instructor_id}>
+                            {ins.first_name} {ins.last_name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+                <FormField
+                  control={form.control}
+                  name="studyArea"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Study Area</FormLabel>
+                      <FormControl>
+                        <textarea
+                          id="studyArea"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          rows={3}
+                          placeholder="Describe your research area or topic..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="researchLevel"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-gray-700 font-medium">Research Level</FormLabel>
+                      <FormControl>
+                        <select
+                          id="researchLevel"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                        >
+                          <option value="">Select Research Level</option>
+                          {researchLevels.map((level) => (
+                            <option key={level} value={level.toLowerCase()}>{level}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="researchGateId"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">ResearchGate ID or URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="researchGateId"
+                            placeholder="username or https://researchgate.net/profile/..."
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="orcid"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">ORCID</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="orcid"
+                            placeholder="0000-0002-1825-0097 or https://orcid.org/0000-..."
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => {
+                  const value = field.value || ''
+                  const onlineChecked = value === 'online' || value === 'online-&-face-to-face'
+                  const f2fChecked = value === 'face-to-face' || value === 'online-&-face-to-face'
+                  const setFrom = (nextOnline: boolean, nextF2F: boolean) => {
+                    let next = ''
+                    if (nextOnline && nextF2F) next = 'online-&-face-to-face'
+                    else if (nextOnline) next = 'online'
+                    else if (nextF2F) next = 'face-to-face'
+                    field.onChange(next)
+                  }
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Delivery Method</FormLabel>
+                      <div className="flex gap-6 mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={onlineChecked}
+                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={f2fChecked}
+                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+              </div>
+            )}
+
+            {/* Entrepreneurship Form */}
+            {selectedCourse === 'entrepreneurship' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Entrepreneurship Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="bg-white border-gray-300 text-gray-900"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
+                        <FormControl>
+                          <select
+                            id="gender"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
               <FormField
                 control={form.control}
                 name="deliveryMethod"
@@ -1198,7 +1457,7 @@ export default function AdminRegistrationAddPage() {
                       <label className="flex items-center">
                         <input
                           type="radio"
-                          name="deliveryMethod"
+                          name="entreDeliveryMethod"
                           value="online"
                           checked={field.value === 'online'}
                           onChange={() => field.onChange('online')}
@@ -1209,7 +1468,7 @@ export default function AdminRegistrationAddPage() {
                       <label className="flex items-center">
                         <input
                           type="radio"
-                          name="deliveryMethod"
+                          name="entreDeliveryMethod"
                           value="face-to-face"
                           checked={field.value === 'face-to-face'}
                           onChange={() => field.onChange('face-to-face')}
@@ -1217,91 +1476,77 @@ export default function AdminRegistrationAddPage() {
                         />
                         <span className="text-gray-700">Face-to-Face</span>
                       </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="entreDeliveryMethod"
+                          value="online-&-face-to-face"
+                          checked={field.value === 'online-&-face-to-face'}
+                          onChange={() => field.onChange('online-&-face-to-face')}
+                          className="mr-2"
+                        />
+                        <span className="text-gray-700">Online & Face-to-Face</span>
+                      </label>
                     </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-          )}
 
-          {/* Entrepreneurship Form */}
-          {selectedCourse === 'entrepreneurship' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Entrepreneurship Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="18"
-                          max="65"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                      <FormControl>
-                        <select
-                          id="gender"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="instructorId"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-gray-700 font-medium">Assign Instructor (optional)</FormLabel>
+                    <FormControl>
+                      <select
+                        id="entreInstructor"
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                      >
+                        <option value="">No Instructor Assigned</option>
+                        {instructors.map((ins) => (
+                          <option key={ins.instructor_id} value={ins.instructor_id}>
+                            {ins.first_name} {ins.last_name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-[#245D51] hover:bg-[#245D51]/90 text-white"
-            >
-              {loading ? 'Registering...' : 'Complete Registration'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleBackToCourses}
-              className="bg-[#245D51] border-[#245D51] text-white hover:bg-[#245D51]/90"
-            >
-              Back to Courses
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-        </form>
-      </Form>
+            <div className="flex gap-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-[#245D51] hover:bg-[#245D51]/90 text-white"
+              >
+                {loading ? 'Registering...' : 'Complete Registration'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleBackToCourses}
+                className="bg-[#245D51] border-[#245D51] text-white hover:bg-[#245D51]/90"
+              >
+                Back to Courses
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+          </form>
+        </Form>
+      </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="min-h-screen p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Registration</h1>
         <p className="text-gray-600">Register users for courses in person</p>

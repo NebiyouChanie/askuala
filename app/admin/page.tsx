@@ -28,7 +28,7 @@ export default async function AdminPage() {
   const statsData = await getStats()
 
   const stats = [
-    { label: 'Tutors (students)', value: statsData.tutors, icon: BookOpen, color: 'bg-blue-600' },
+    { label: 'Tutors', value: statsData.tutors, icon: BookOpen, color: 'bg-blue-600' },
     { label: 'Tutees (students)', value: statsData.tutees, icon: GraduationCap, color: 'bg-green-600' },
     { label: 'Training (students)', value: statsData.trainings, icon: Monitor, color: 'bg-purple-600' },
     { label: 'Research (students)', value: statsData.researches, icon: Lightbulb, color: 'bg-yellow-500' },

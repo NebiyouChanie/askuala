@@ -39,6 +39,23 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
 
   const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'N/A'
 
+  // Resolve instructor name if assigned
+  let instructorName: string | null = null
+  if (data.instructor_id) {
+    try {
+      const hdrs = headers()
+      const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
+      const proto = hdrs.get('x-forwarded-proto') || 'http'
+      const base = `${proto}://${host}`
+      const res = await fetch(`${base}/api/admin/instructors/${encodeURIComponent(data.instructor_id)}`, { cache: 'no-store' })
+      if (res.ok) {
+        const json = await res.json()
+        const ins = json?.data
+        if (ins) instructorName = `${ins.first_name} ${ins.last_name}`
+      }
+    } catch {}
+  }
+
   return (
     <div className="p-6">
       <div className="mb-4">
@@ -63,6 +80,9 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
               <div className="text-sm text-gray-700 space-y-1">
                 <div>Created: {data.created_at ? new Date(data.created_at).toLocaleString() : 'N/A'}</div>
                 {'payment_status' in data && <div>Payment: {data.payment_status || 'N/A'}</div>}
+                {'instructor_id' in data && (
+                  <div>Instructor: {instructorName || (data.instructor_id ? `ID ${data.instructor_id}` : 'N/A')}</div>
+                )}
               </div>
             </div>
           </div>
@@ -121,6 +141,7 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
             <div className="text-sm text-gray-700 space-y-1">
               <div>Age: {data.age ?? 'N/A'}</div>
               <div>Gender: {data.gender || 'N/A'}</div>
+              <div>Method: {data.delivery_method || 'N/A'}</div>
             </div>
           )}
         </CardContent>

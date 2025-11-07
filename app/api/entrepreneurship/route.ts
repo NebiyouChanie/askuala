@@ -5,8 +5,10 @@ import { query, queryOne, create, update, remove } from '@/lib/db'
 // Validation schemas
 const EntrepreneurshipCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"]),
+  instructorId: z.string().optional(),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
 })
 
 const EntrepreneurshipUpdateSchema = EntrepreneurshipCreateSchema.partial().extend({
@@ -63,6 +65,8 @@ export async function GET(request: NextRequest) {
         u.address,
         e.age,
         e.gender,
+        e.instructor_id,
+        e.delivery_method,
         e.payment_status,
         e.created_at,
         e.updated_at
@@ -133,6 +137,8 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       age: validatedData.age,
       gender: validatedData.gender,
+      instructor_id: validatedData.instructorId || null,
+      delivery_method: validatedData.deliveryMethod || null,
     }
 
     await create('entrepreneurships', entrepreneurshipData)

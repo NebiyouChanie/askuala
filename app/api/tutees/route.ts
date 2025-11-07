@@ -5,7 +5,7 @@ import { query, queryOne, create, update, remove } from '@/lib/db'
 // Validation schemas
 const TuteeCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  age: z.number().min(5, "Must be at least 5 years old").max(18, "Must be under 18 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"]),
   gradeLevel: z.string().min(1, "Grade level is required"),
   subjects: z.array(z.string()).min(1, "Select at least one subject"),

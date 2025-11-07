@@ -4,14 +4,14 @@ import { queryOne, update, remove } from '@/lib/db'
 
 const TutorUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old").optional(),
+  age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
   gradeLevels: z.array(z.string()).min(1, "Select at least one grade level").optional(),
   subjects: z.array(z.string()).min(1, "Select at least one subject").optional(),
   startTime: z.string().min(1, "Start time is required").optional(),
   endTime: z.string().min(1, "End time is required").optional(),
   availableDays: z.array(z.string()).min(1, "Select at least one day").optional(),
-  deliveryMethod: z.enum(["online", "face-to-face"]).optional(),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   cvPath: z.string().min(1, "CV is required").optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
 })
