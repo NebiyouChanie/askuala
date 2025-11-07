@@ -30,7 +30,7 @@ const whyChooseUs = [
     icon: Award,
     title: "Value",
     description:
-      "Core Values: Empower, Quality, Innovation, Accessibility, Sustainability.",
+      "Our core values reflect our commitment to meaningful impact — we empower individuals by building skills for long-term independence, uphold quality across all our tutoring, training, and data services, and drive innovation through the use of digital tools. We ensure accessibility by making our services affordable and inclusive for everyone, while maintaining sustainability through ethical, community-focused practices.",
   },
 ]
 
