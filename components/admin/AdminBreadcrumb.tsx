@@ -40,11 +40,19 @@ export default function AdminBreadcrumb() {
   const adminIndex = parts.findIndex((p) => p === "admin")
   const crumbs = adminIndex >= 0 ? parts.slice(adminIndex) : ["admin"]
 
+  const isIdSegment = (seg: string) => {
+    // UUID v4 or similar pattern, or purely numeric id
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg)
+    const numericId = /^\d{4,}$/.test(seg)
+    return uuidLike || numericId
+  }
+
   const items = crumbs.map((seg, idx) => {
     const href = "/" + crumbs.slice(0, idx + 1).join("/")
     const label = formatLabel(seg)
     const isLast = idx === crumbs.length - 1
-    return { href, label, isLast }
+    const clickable = !isLast && !isIdSegment(seg)
+    return { href, label, isLast, clickable }
   })
 
   return (
@@ -53,7 +61,7 @@ export default function AdminBreadcrumb() {
         {items.map((item, i) => (
           <div key={item.href} className="contents">
             <BreadcrumbItem>
-              {item.isLast ? (
+              {item.isLast || !item.clickable ? (
                 <BreadcrumbPage>{item.label}</BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>

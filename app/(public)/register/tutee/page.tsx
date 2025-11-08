@@ -26,7 +26,7 @@ const TuteeSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   availableDays: z.array(z.string()).min(1, "Select at least one day"),
-  deliveryMethod: z.enum(["online", "face-to-face"], { required_error: "Please select delivery method" }),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
 })
 
 type TuteeFormValues = z.infer<typeof TuteeSchema>
@@ -349,6 +349,13 @@ export default function TuteeRegisterPage() {
                         <Label htmlFor="face-to-face" className="cursor-pointer flex items-center gap-2">
                           <Users className="w-4 h-4" />
                           Face-to-Face
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="online-&-face-to-face" id="online-and-face-to-face" />
+                        <Label htmlFor="online-and-face-to-face" className="cursor-pointer flex items-center gap-2">
+                          <Monitor className="w-4 h-4" />
+                          Online & Face-to-Face
                         </Label>
                       </div>
                     </RadioGroup>

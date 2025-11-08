@@ -44,7 +44,8 @@ CREATE TABLE tutees (
     -- JSON arrays to store multiple selections
     subjects JSON NOT NULL,                 -- ["Maths", "Physics"]
     available_days JSON NOT NULL,           -- ["Monday", "Wednesday"]
-	delivery_method ENUM('online', 'face-to-face') NOT NULL,
+	delivery_method ENUM('online', 'face-to-face', 'online-&-face-to-face') NOT NULL,
+    payment_status ENUM('paid', 'unpaid') NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -61,8 +62,8 @@ CREATE TABLE trainings (
     age INT NOT NULL,
     gender ENUM('male', 'female') NOT NULL,
     training_type VARCHAR(100) NOT NULL,     -- e.g. "Coding", "UX/UI"
-    delivery_method ENUM('online', 'face-to-face') NOT NULL,
-    paymnet_status ENUM('paid', 'unpaid') NOT NULL,
+    delivery_method ENUM('online', 'face-to-face', 'online-&-face-to-face') NOT NULL,
+    payment_status ENUM('paid', 'unpaid') NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -82,8 +83,10 @@ CREATE TABLE researches (
     gender ENUM('male', 'female') NOT NULL,
     study_area TEXT NOT NULL,                      -- free text research area/topic
     research_level ENUM('undergraduate', 'graduate', 'phd', 'professional') NOT NULL,
-    delivery_method ENUM('online', 'face-to-face') NOT NULL,
-    paymnet_status ENUM('paid', 'unpaid') NOT NULL,
+    delivery_method ENUM('online', 'face-to-face', 'online-&-face-to-face') NOT NULL,
+    researchgate_id VARCHAR(255) NULL,
+    orcid VARCHAR(50) NULL,
+    payment_status ENUM('paid', 'unpaid') NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -101,7 +104,9 @@ CREATE TABLE entrepreneurships (
     age INT NOT NULL,
     gender ENUM('male', 'female') NOT NULL,
 
-    paymnet_status ENUM('paid', 'unpaid') NOT NULL,
+    instructor_id CHAR(36) NULL,
+    delivery_method ENUM('online', 'face-to-face', 'online-&-face-to-face') NULL,
+    payment_status ENUM('paid', 'unpaid') NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

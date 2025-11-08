@@ -1024,24 +1024,39 @@ export default function AdminRegistrationAddPage() {
                   return (
                     <FormItem>
                       <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                      <div className="flex gap-6 mt-2">
+                      <div className="flex gap-4 mt-2">
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={onlineChecked}
-                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            type="radio"
+                            name="tuteeDeliveryMethod"
+                            value="online"
+                            checked={field.value === 'online'}
+                            onChange={() => field.onChange('online')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Online</span>
                         </label>
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={f2fChecked}
-                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            type="radio"
+                            name="tuteeDeliveryMethod"
+                            value="face-to-face"
+                            checked={field.value === 'face-to-face'}
+                            onChange={() => field.onChange('face-to-face')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="tuteeDeliveryMethod"
+                            value="online-&-face-to-face"
+                            checked={field.value === 'online-&-face-to-face'}
+                            onChange={() => field.onChange('online-&-face-to-face')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online & Face-to-Face</span>
                         </label>
                       </div>
                       <FormMessage />
@@ -1166,24 +1181,39 @@ export default function AdminRegistrationAddPage() {
                   return (
                     <FormItem>
                       <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                      <div className="flex gap-6 mt-2">
+                      <div className="flex gap-4 mt-2">
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={onlineChecked}
-                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            type="radio"
+                            name="trainingDeliveryMethod"
+                            value="online"
+                            checked={field.value === 'online'}
+                            onChange={() => field.onChange('online')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Online</span>
                         </label>
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={f2fChecked}
-                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            type="radio"
+                            name="trainingDeliveryMethod"
+                            value="face-to-face"
+                            checked={field.value === 'face-to-face'}
+                            onChange={() => field.onChange('face-to-face')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="trainingDeliveryMethod"
+                            value="online-&-face-to-face"
+                            checked={field.value === 'online-&-face-to-face'}
+                            onChange={() => field.onChange('online-&-face-to-face')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online & Face-to-Face</span>
                         </label>
                       </div>
                       <FormMessage />
@@ -1371,24 +1401,39 @@ export default function AdminRegistrationAddPage() {
                   return (
                     <FormItem>
                       <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                      <div className="flex gap-6 mt-2">
+                      <div className="flex gap-4 mt-2">
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={onlineChecked}
-                            onChange={() => setFrom(!onlineChecked, f2fChecked)}
+                            type="radio"
+                            name="researchDeliveryMethod"
+                            value="online"
+                            checked={field.value === 'online'}
+                            onChange={() => field.onChange('online')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Online</span>
                         </label>
                         <label className="flex items-center">
                           <input
-                            type="checkbox"
-                            checked={f2fChecked}
-                            onChange={() => setFrom(onlineChecked, !f2fChecked)}
+                            type="radio"
+                            name="researchDeliveryMethod"
+                            value="face-to-face"
+                            checked={field.value === 'face-to-face'}
+                            onChange={() => field.onChange('face-to-face')}
                             className="mr-2"
                           />
                           <span className="text-gray-700">Face-to-Face</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="researchDeliveryMethod"
+                            value="online-&-face-to-face"
+                            checked={field.value === 'online-&-face-to-face'}
+                            onChange={() => field.onChange('online-&-face-to-face')}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-700">Online & Face-to-Face</span>
                         </label>
                       </div>
                       <FormMessage />

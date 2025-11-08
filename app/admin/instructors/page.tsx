@@ -31,10 +31,10 @@ export default function AdminInstructorsListPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const load = async () => {
+  const load = async (q = search) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/instructors?search=${encodeURIComponent(search)}`)
+      const res = await fetch(`/api/admin/instructors?search=${encodeURIComponent(q)}`)
       const data = await res.json()
       if (!res.ok || !data.success) throw new Error(data.error || "Failed to load")
       setRows(data.data || [])
@@ -92,7 +92,10 @@ export default function AdminInstructorsListPage() {
               className="w-64"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); load() } }}
             />
-            <Button onClick={load} disabled={loading}>Search</Button>
+            <Button size="sm" onClick={() => load()} disabled={loading}>Search</Button>
+            <Button size="sm" variant="outline"  onClick={() => { setSearch(""); load("") }} disabled={loading || !search}>
+              Clear
+            </Button>
           </div>
         </CardHeader>
         <CardContent>

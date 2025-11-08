@@ -19,7 +19,7 @@ const ResearchSchema = z.object({
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
   studyArea: z.string().min(1, "Research area is required"),
   researchLevel: z.enum(["undergraduate", "graduate", "phd", "professional"], { required_error: "Please select your research level" }),
-  deliveryMethod: z.enum(["online", "face-to-face"], { required_error: "Please select delivery method" }),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
 })
 
 type ResearchFormValues = z.infer<typeof ResearchSchema>
@@ -305,6 +305,13 @@ export default function ResearchRegisterPage() {
                         <Label htmlFor="face-to-face" className="cursor-pointer flex items-center gap-2">
                           <Users className="w-4 h-4" />
                           Face-to-Face
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="online-&-face-to-face" id="online-and-face-to-face" />
+                        <Label htmlFor="online-and-face-to-face" className="cursor-pointer flex items-center gap-2">
+                          <Monitor className="w-4 h-4" />
+                          Online & Face-to-Face
                         </Label>
                       </div>
                     </RadioGroup>

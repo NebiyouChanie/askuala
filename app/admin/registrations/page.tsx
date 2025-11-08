@@ -71,6 +71,8 @@ export default function AdminRegistrationsPage() {
   const [total, setTotal] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const markAsPaid = async (type: string, id: string) => {
     try {
@@ -185,6 +187,32 @@ export default function AdminRegistrationsPage() {
   }
 
   const totalPages = Math.ceil(total / pageSize)
+
+  const handleEdit = (registration: RegistrationData) => {
+    router.push(`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}/edit`)
+  }
+
+  const requestDelete = (registration: RegistrationData) => {
+    const name = `${registration.user.first_name || ''} ${registration.user.last_name || ''}`.trim() || registration.id
+    setDeleteTarget({ id: registration.id, type: registration.type, name })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      setDeleting(true)
+      const res = await fetch(`/api/${deleteTarget.type}/${deleteTarget.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to delete')
+      toast.success('Registration deleted')
+      setDeleteTarget(null)
+      fetchRegistrations(selectedType, currentPage)
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to delete')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const downloadCV = async (cvPath: string, firstName: string, lastName: string) => {
     try {
@@ -349,8 +377,8 @@ export default function AdminRegistrationsPage() {
                                 <Link href={`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}`} className="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 hover:bg-gray-50">
                                   <Eye className="w-4 h-4 text-gray-700" />
                                 </Link>
-                                <Button size="sm" variant="outline">Edit</Button>
-                                <Button size="sm" variant="destructive">Delete</Button>
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(registration)}>Edit</Button>
+                                <Button size="sm" variant="destructive" onClick={() => requestDelete(registration)}>Delete</Button>
                                 {registration.payment_status !== 'paid' ? (
                                   <Button size="sm" className="bg-[#245D51] hover:bg-[#245D51]/90 text-white" onClick={() => markAsPaid(registration.type, registration.id)}>Paid</Button>
                                 ) : (
@@ -474,6 +502,19 @@ export default function AdminRegistrationsPage() {
           </Card>
         )}
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+            <h3 className="text-lg font-semibold mb-2">Delete registration?</h3>
+            <p className="text-sm text-gray-600 mb-4">This will permanently delete the {deleteTarget.type} registration for <span className="font-medium">{deleteTarget.name}</span>.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>{deleting ? 'Deleting...' : 'Delete'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

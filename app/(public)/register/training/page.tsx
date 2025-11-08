@@ -30,7 +30,7 @@ const TrainingSchema = z.object({
   age: z.number().min(16, "Must be at least 16 years old").max(65, "Must be under 65 years old"),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
   trainingType: z.string().min(1, "Training Type is required"),
-  deliveryMethod: z.enum(["online", "face-to-face"], { required_error: "Please select delivery method" }),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
 })
 
 type TrainingFormValues = z.infer<typeof TrainingSchema>
@@ -308,6 +308,13 @@ export default function TrainingRegisterPage() {
                         <Label htmlFor="face-to-face" className="cursor-pointer flex items-center gap-2">
                           <Users className="w-4 h-4" />
                           Face-to-Face
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="online-&-face-to-face" id="online-and-face-to-face" />
+                        <Label htmlFor="online-and-face-to-face" className="cursor-pointer flex items-center gap-2">
+                          <Monitor className="w-4 h-4" />
+                          Online & Face-to-Face
                         </Label>
                       </div>
                     </RadioGroup>
