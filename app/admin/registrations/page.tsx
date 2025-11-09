@@ -22,6 +22,7 @@ interface RegistrationData {
   data: any
   created_at: string
   payment_status?: 'paid' | 'unpaid'
+  status?: 'pending' | 'accepted' | 'rejected'
 }
 
 const registrationTypes = [
@@ -114,6 +115,26 @@ export default function AdminRegistrationsPage() {
     }
   }
 
+  const setStatus = async (type: string, id: string, status: 'accepted' | 'rejected') => {
+    try {
+      const res = await fetch(`/api/${type}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to update status')
+        return
+      }
+      toast.success(`Marked as ${status}`)
+      fetchRegistrations(type, currentPage)
+    } catch (e) {
+      console.error('Set status error:', e)
+      toast.error('Failed to update status')
+    }
+  }
+
   const fetchRegistrations = async (type: string, page: number = 1) => {
     if (!type) return
     
@@ -135,7 +156,8 @@ export default function AdminRegistrationsPage() {
           },
           data: item,
           created_at: item.created_at,
-          payment_status: item.payment_status as ('paid' | 'unpaid' | undefined)
+          payment_status: item.payment_status as ('paid' | 'unpaid' | undefined),
+          status: item.status as ('pending' | 'accepted' | 'rejected' | undefined),
         }))
         
         setRegistrations(mappedRegistrations)
@@ -344,6 +366,7 @@ export default function AdminRegistrationsPage() {
                         
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
@@ -372,6 +395,23 @@ export default function AdminRegistrationsPage() {
                                 <span className="text-gray-500">N/A</span>
                               )}
                             </td>
+                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                              {registration.status ? (
+                                <span
+                                  className={
+                                    registration.status === 'accepted'
+                                      ? 'text-green-700 bg-green-100 px-2 py-1 rounded'
+                                      : registration.status === 'rejected'
+                                      ? 'text-red-700 bg-red-100 px-2 py-1 rounded'
+                                      : 'text-gray-700 bg-gray-100 px-2 py-1 rounded'
+                                  }
+                                >
+                                  {registration.status.charAt(0).toUpperCase() + registration.status.slice(1)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">Pending</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                               <div className="inline-flex gap-2 items-center">
                                 <Link href={`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}`} className="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 hover:bg-gray-50">
@@ -384,6 +424,23 @@ export default function AdminRegistrationsPage() {
                                 ) : (
                                   <Button size="sm" variant="outline" onClick={() => markAsUnpaid(registration.type, registration.id)}>Unpaid</Button>
                                 )}
+                                <Button
+                                  size="sm"
+                                  variant={registration.status === 'accepted' ? 'outline' : 'default'}
+                                  className={registration.status === 'accepted' ? '' : 'bg-green-600 hover:bg-green-700 text-white'}
+                                  onClick={() => setStatus(registration.type, registration.id, 'accepted')}
+                                  disabled={registration.status === 'accepted'}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={registration.status === 'rejected' ? 'outline' : 'destructive'}
+                                  onClick={() => setStatus(registration.type, registration.id, 'rejected')}
+                                  disabled={registration.status === 'rejected'}
+                                >
+                                  Reject
+                                </Button>
                               </div>
                             </td>
                           </tr>

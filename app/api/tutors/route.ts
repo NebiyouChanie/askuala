@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
         t.delivery_method,
         t.cv_path,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM tutors t

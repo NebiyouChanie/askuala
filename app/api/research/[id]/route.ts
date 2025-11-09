@@ -10,6 +10,7 @@ const ResearchUpdateSchema = z.object({
   researchLevel: z.enum(["undergraduate", "graduate", "phd", "professional"]).optional(),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
+  status: z.enum(["pending","accepted","rejected"]).optional(),
 })
 
 // GET /api/research/[id] - Get a specific research registration
@@ -45,6 +46,7 @@ export async function GET(
         r.researchgate_id,
         r.orcid,
         r.payment_status,
+        r.status,
         r.created_at,
         r.updated_at
       FROM researches r
@@ -119,6 +121,7 @@ export async function PUT(
 
     // Update research registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus
+    if (validatedData.status) updateData.status = validatedData.status
 
     await update('researches', { research_id: id }, updateData)
 

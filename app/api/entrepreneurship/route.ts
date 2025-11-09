@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         e.instructor_id,
         e.delivery_method,
         e.payment_status,
+        e.status,
         e.created_at,
         e.updated_at
       FROM entrepreneurships e

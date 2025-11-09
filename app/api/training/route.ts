@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
         t.delivery_method,
         t.instructor_id,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM trainings t

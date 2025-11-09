@@ -8,6 +8,7 @@ const EntrepreneurshipUpdateSchema = z.object({
   gender: z.enum(["male", "female"]).optional(),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
+  status: z.enum(["pending","accepted","rejected"]).optional(),
 })
 
 // GET /api/entrepreneurship/[id] - Get a specific entrepreneurship registration
@@ -39,6 +40,7 @@ export async function GET(
         e.instructor_id,
         e.delivery_method,
         e.payment_status,
+        e.status,
         e.created_at,
         e.updated_at
       FROM entrepreneurships e
@@ -109,6 +111,7 @@ export async function PUT(
 
     // Update entrepreneurship registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus
+    if (validatedData.status) updateData.status = validatedData.status
 
     await update('entrepreneurships', { entrepreneurship_id: id }, updateData)
 

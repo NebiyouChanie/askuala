@@ -13,6 +13,7 @@ const TuteeUpdateSchema = z.object({
   availableDays: z.array(z.string()).min(1, "Select at least one day").optional(),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
+  status: z.enum(["pending","accepted","rejected"]).optional(),
 })
 
 // GET /api/tutees/[id] - Get a specific tutee
@@ -48,6 +49,7 @@ export async function GET(
         t.available_days,
         t.delivery_method,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM tutees t
@@ -128,6 +130,7 @@ export async function PUT(
     if (validatedData.availableDays) updateData.available_days = JSON.stringify(validatedData.availableDays)
     if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus
+    if (validatedData.status) updateData.status = validatedData.status
 
     // Update tutee
     await update('tutees', { tutee_id: id }, updateData)

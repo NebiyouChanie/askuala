@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
         r.researchgate_id,
         r.orcid,
         r.payment_status,
+        r.status,
         r.created_at,
         r.updated_at
       FROM researches r

@@ -9,6 +9,7 @@ const TrainingUpdateSchema = z.object({
   trainingTypes: z.array(z.string()).min(1, "Select at least one training type").optional(),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
+  status: z.enum(["pending","accepted","rejected"]).optional(),
 })
 
 // GET /api/training/[id] - Get a specific training registration
@@ -41,6 +42,7 @@ export async function GET(
         t.delivery_method,
         t.instructor_id,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM trainings t
@@ -116,6 +118,7 @@ export async function PUT(
 
     // Update training registration
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus
+    if (validatedData.status) updateData.status = validatedData.status
 
     await update('trainings', { training_id: id }, updateData)
 

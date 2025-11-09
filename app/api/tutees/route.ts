@@ -86,6 +86,7 @@ export async function GET(request: NextRequest) {
         t.available_days,
         t.delivery_method,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM tutees t

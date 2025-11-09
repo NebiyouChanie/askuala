@@ -14,6 +14,7 @@ const TutorUpdateSchema = z.object({
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   cvPath: z.string().min(1, "CV is required").optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
+  status: z.enum(["pending","accepted","rejected"]).optional(),
 })
 
 // GET /api/tutors/[id] - Get a specific tutor
@@ -50,6 +51,7 @@ export async function GET(
         t.delivery_method,
         t.cv_path,
         t.payment_status,
+        t.status,
         t.created_at,
         t.updated_at
       FROM tutors t
@@ -131,6 +133,7 @@ export async function PUT(
     if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
     if (validatedData.cvPath) updateData.cv_path = validatedData.cvPath
     if (validatedData.paymentStatus) updateData.payment_status = validatedData.paymentStatus
+    if (validatedData.status) updateData.status = validatedData.status
 
     // Update tutor
     await update('tutors', { tutor_id: id }, updateData)
