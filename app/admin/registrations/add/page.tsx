@@ -112,20 +112,21 @@ export default function AdminRegistrationAddPage() {
     address: z.string().min(1, 'Address is required'),
     password: z.string().min(8, 'Password must be at least 8 characters').optional(),
     confirmPassword: z.string().optional(),
+    courseType: z.enum(['tutors','tutees','training','research','entrepreneurship']).optional(),
     age: z
       .union([z.number().int().min(1, 'Age is required'), z.undefined()])
       .optional(),
-    gender: z.string().optional(),
-    gradeLevels: z.array(z.string()).optional(),
+    gender: z.enum(['male','female']).optional(),
+    gradeLevels: z.array(z.enum(['KG','1-4','5-8','9-12'])).optional(),
     gradeLevel: z.string().optional(),
-    subjects: z.array(z.string()).optional(),
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-    availableDays: z.array(z.string()).optional(),
-    deliveryMethod: z.string().optional(),
-    trainingTypes: z.array(z.string()).optional(),
+    subjects: z.array(z.enum(['Maths','Physics','Chemistry','Biology','English','Science','ALL'])).optional(),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/,'Invalid time (HH:MM)').optional(),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/,'Invalid time (HH:MM)').optional(),
+    availableDays: z.array(z.enum(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])).optional(),
+    deliveryMethod: z.enum(['online','face-to-face','online-&-face-to-face']).optional(),
+    trainingTypes: z.array(z.enum(['Software','Coding','Kaizen','Accounting','Graphics','Video Editing','FX Trading','UX/UI','Digital Marketing'])).optional(),
     studyArea: z.string().optional(),
-    researchLevel: z.string().optional(),
+    researchLevel: z.enum(['undergraduate','graduate','phd','professional']).optional(),
     instructorId: z.string().optional(),
     researchGateId: z
       .string()
@@ -151,13 +152,133 @@ export default function AdminRegistrationAddPage() {
         { message: 'Enter a valid ORCID (e.g., 0000-0002-1825-0097) or profile URL' }
       )
       .optional(),
-    cv: z.any().optional(),
+    cv: z.any()
+      .refine(
+        (file) => !file || (typeof File !== 'undefined' && file instanceof File && file.type === 'application/pdf' && file.size <= 5 * 1024 * 1024),
+        'CV must be a PDF file under 5MB'
+      )
+      .optional(),
+  }).superRefine((val, ctx) => {
+    // If both times provided, ensure endTime is after startTime
+    if (val.startTime && val.endTime) {
+      const [sh, sm] = val.startTime.split(':').map(Number)
+      const [eh, em] = val.endTime.split(':').map(Number)
+      const startMins = sh * 60 + sm
+      const endMins = eh * 60 + em
+      if (endMins <= startMins) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End time must be after start time',
+          path: ['endTime'],
+        })
+      }
+    }
+    // Tutors: require presence of core fields on the client
+    if (val.courseType === 'tutors') {
+      if (!val.age) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Age is required', path: ['age'] })
+      }
+      if (!val.gender) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required', path: ['gender'] })
+      }
+      if (!val.gradeLevels || val.gradeLevels.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select at least one grade range', path: ['gradeLevels'] })
+      }
+      if (!val.startTime) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Start time is required', path: ['startTime'] })
+      }
+      if (!val.endTime) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End time is required', path: ['endTime'] })
+      }
+      if (!val.availableDays || val.availableDays.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select available days', path: ['availableDays'] })
+      }
+      if (!val.deliveryMethod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select delivery method', path: ['deliveryMethod'] })
+      }
+      if (!val.cv) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'CV (PDF) is required', path: ['cv'] })
+      }
+    }
+    // Tutees: require presence of core fields on the client
+    if (val.courseType === 'tutees') {
+      if (!val.age) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Age is required', path: ['age'] })
+      }
+      if (!val.gender) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required', path: ['gender'] })
+      }
+      if (!val.gradeLevels || val.gradeLevels.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select at least one grade level', path: ['gradeLevels'] })
+      }
+      if (!val.startTime) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Start time is required', path: ['startTime'] })
+      }
+      if (!val.endTime) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End time is required', path: ['endTime'] })
+      }
+      if (!val.availableDays || val.availableDays.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select available days', path: ['availableDays'] })
+      }
+      if (!val.deliveryMethod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select delivery method', path: ['deliveryMethod'] })
+      }
+      if (!val.subjects || val.subjects.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select at least one subject', path: ['subjects'] })
+      }
+    }
+    // Research: require presence of core fields on the client
+    if (val.courseType === 'research') {
+      if (!val.age) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Age is required', path: ['age'] })
+      }
+      if (!val.gender) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required', path: ['gender'] })
+      }
+      if (!val.studyArea || String(val.studyArea).trim() === '') {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Study area is required', path: ['studyArea'] })
+      }
+      if (!val.researchLevel) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select research level', path: ['researchLevel'] })
+      }
+      if (!val.deliveryMethod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select delivery method', path: ['deliveryMethod'] })
+      }
+    }
+    // Training: require presence of core fields on the client
+    if (val.courseType === 'training') {
+      if (!val.age) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Age is required', path: ['age'] })
+      }
+      if (!val.gender) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required', path: ['gender'] })
+      }
+      if (!val.trainingTypes || val.trainingTypes.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select at least one training type', path: ['trainingTypes'] })
+      }
+      if (!val.deliveryMethod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select delivery method', path: ['deliveryMethod'] })
+      }
+    }
+    // Entrepreneurship: require presence of core fields on the client
+    if (val.courseType === 'entrepreneurship') {
+      if (!val.age) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Age is required', path: ['age'] })
+      }
+      if (!val.gender) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gender is required', path: ['gender'] })
+      }
+      if (!val.deliveryMethod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select delivery method', path: ['deliveryMethod'] })
+      }
+    }
   })
 
   type AdminRegistrationValues = z.infer<typeof AdminRegistrationSchema>
 
   const form = useForm<AdminRegistrationValues>({
     resolver: zodResolver(AdminRegistrationSchema),
+    mode: 'onChange',
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -166,24 +287,34 @@ export default function AdminRegistrationAddPage() {
       address: '',
       password: '',
       confirmPassword: '',
+      courseType: undefined,
       age: undefined,
-      gender: '',
+      gender: undefined,
       gradeLevels: [],
       gradeLevel: '',
       subjects: [],
       startTime: '',
       endTime: '',
       availableDays: [],
-      deliveryMethod: '',
+      deliveryMethod: undefined,
       trainingTypes: [],
       studyArea: '',
-      researchLevel: '',
+      researchLevel: undefined,
       instructorId: '',
       researchGateId: '',
       orcid: '',
       cv: null,
     },
   })
+
+  // Keep schema-aware course type in sync for conditional validation
+  useEffect(() => {
+    if (selectedCourse) {
+      form.setValue('courseType', selectedCourse as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+    } else {
+      form.setValue('courseType', undefined, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+    }
+  }, [selectedCourse])
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
@@ -248,17 +379,17 @@ export default function AdminRegistrationAddPage() {
       password: '',
       confirmPassword: '',
       age: undefined,
-      gender: '',
+      gender: undefined,
       gradeLevels: [],
       gradeLevel: '',
       subjects: [],
       startTime: '',
       endTime: '',
       availableDays: [],
-      deliveryMethod: '',
+      deliveryMethod: undefined,
       trainingTypes: [],
       studyArea: '',
-      researchLevel: '',
+      researchLevel: undefined,
       cv: null,
     })
   }
@@ -454,17 +585,17 @@ export default function AdminRegistrationAddPage() {
         password: '',
         confirmPassword: '',
         age: undefined,
-        gender: '',
+        gender: undefined,
         gradeLevels: [],
         gradeLevel: '',
         subjects: [],
         startTime: '',
         endTime: '',
         availableDays: [],
-        deliveryMethod: '',
+        deliveryMethod: undefined,
         trainingTypes: [],
         studyArea: '',
-        researchLevel: '',
+        researchLevel: undefined,
         cv: null,
       })
       setSelectedUser(null)
@@ -745,6 +876,24 @@ export default function AdminRegistrationAddPage() {
               </AlertDescription>
             </Alert>
           )}
+
+          {selectedUser && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedUser(null)
+                  form.setValue('firstName', '')
+                  form.setValue('lastName', '')
+                  form.setValue('email', '')
+                  form.setValue('phone', '')
+                  form.setValue('address', '')
+                }}
+              >
+                Clear selection
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -775,29 +924,7 @@ export default function AdminRegistrationAddPage() {
       {/* Course Form */}
       {renderCourseForm()}
 
-      {/* Generated Password Display */}
-      {generatedPassword && (
-        <Card className="bg-green-50 border-green-200 mt-6">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-green-700 mb-2">Registration Complete!</h3>
-            <p className="text-gray-700 mb-4">User account created successfully. Please provide this password to the user:</p>
-            <div className="bg-white p-4 rounded border border-gray-200">
-              <code className="text-green-700 font-mono text-lg">{generatedPassword}</code>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              The user can use this password to log in to their account.
-            </p>
-            <div className="mt-4">
-              <Button
-                onClick={handleBackToCourses}
-                className="bg-[#245D51] hover:bg-[#245D51]/90 text-white"
-              >
-                Go Back 
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      
     </div>
   )
 }
