@@ -11,7 +11,7 @@ async function getStats(): Promise<{
   instructors: number
 }> {
   try {
-    const hdrs = headers()
+    const hdrs = await headers()
     const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
     const proto = hdrs.get('x-forwarded-proto') || 'http'
     const base = `${proto}://${host}`

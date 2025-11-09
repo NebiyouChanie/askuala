@@ -4,16 +4,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { services } from "../data"
 
-type Params = {
-  params: { slug: string }
-}
+type Params = { params: Promise<{ slug: string }> }
 
 export function generateStaticParams() {
   return services.map((s) => ({ slug: s.slug }))
 }
 
-export function generateMetadata({ params }: Params) {
-  const data = services.find((s) => s.slug === params.slug)
+export async function generateMetadata({ params }: Params) {
+  const { slug } = await params
+  const data = services.find((s) => s.slug === slug)
   if (!data) return {}
   return {
     title: `${data.title} | Askuala Services`,
@@ -21,8 +20,9 @@ export function generateMetadata({ params }: Params) {
   }
 }
 
-export default function ServiceDetailPage({ params }: Params) {
-  const data = services.find((s) => s.slug === params.slug)
+export default async function ServiceDetailPage({ params }: Params) {
+  const { slug } = await params
+  const data = services.find((s) => s.slug === slug)
   if (!data) return notFound()
 
   const ctaHref = data.ctaLink || "/contact"
