@@ -5,10 +5,11 @@ import { cookies } from 'next/headers'
 import { decrypt } from '@/lib/session'
 
 const RateSchema = z.object({ rating: z.number().int().min(1).max(5) })
+type SessionPayload = { userId?: string }
 
-export async function POST(request: NextRequest, { params }: { params: { instructor_id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ instructor_id: string }> }) {
   try {
-    const { instructor_id } = params
+    const { instructor_id } = await params
     const body = await request.json()
     const parsed = RateSchema.safeParse(body)
     if (!parsed.success) {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: { instruc
     // Identify current user
     const sessionToken = (await cookies()).get('session')?.value
     if (!sessionToken) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    const payload: any = await decrypt(sessionToken)
+    const payload = (await decrypt(sessionToken)) as SessionPayload
     if (!payload?.userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     const userId = payload.userId as string
 

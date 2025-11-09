@@ -5,8 +5,9 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { Suspense } from "react"
 
-export default function VerifyInfoPage() {
+function VerifyInfoPageContent() {
   const params = useSearchParams()
   const email = params?.get('email') || ''
 
@@ -16,8 +17,8 @@ export default function VerifyInfoPage() {
       const res = await fetch('/api/auth/verify/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
       if (!res.ok) throw new Error('Failed to resend verification email')
       toast.success('Verification email sent (check your inbox)')
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to resend')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to resend')
     }
   }
 
@@ -45,6 +46,14 @@ export default function VerifyInfoPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function VerifyInfoPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen flex items-center justify-center">Loading...</div>}>
+      <VerifyInfoPageContent />
+    </Suspense>
   )
 }
 

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
-export default function RegistrationTypeRedirect({ params }: { params: { type: string } }) {
-  const type = params.type
+export default async function RegistrationTypeRedirect({ params }: { params: Promise<{ type: string }> }) {
+  const { type } = await params
   redirect(`/admin/registrations?type=${encodeURIComponent(type)}`)
 }
 

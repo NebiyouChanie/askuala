@@ -19,8 +19,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from "react-hook-form"
 import { toast } from 'sonner'
+import { useEffect, Suspense } from 'react'
 
-export default function SignInForm() {
+function SignInFormContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,7 +52,7 @@ export default function SignInForm() {
       }
       //sign-in is successful
       toast.success('Sign-in successful!');
-      const role = (result as any)?.role
+      const role = 'role' in result ? result.role : undefined
       const from = searchParams?.get('from') || ''
       const destination = role === 'admin' ? (from.startsWith('/admin') ? from : '/admin') : (from && !from.startsWith('/admin') ? from : '/')
       if (typeof window !== 'undefined') {
@@ -68,15 +69,16 @@ export default function SignInForm() {
   };
   
   // Show toast messages from verification redirects
-  const verifyStatus = searchParams?.get('verified')
-  const verifyError = searchParams?.get('verifyError')
-  if (verifyStatus === '1') {
-    toast.success('Email verified successfully. You can now sign in.')
-  }
-  if (verifyError) {
-    toast.error(decodeURIComponent(verifyError))
-  }
-
+  useEffect(() => {
+    const verifyStatus = searchParams?.get('verified')
+    const verifyError = searchParams?.get('verifyError')
+    if (verifyStatus === '1') {
+      toast.success('Email verified successfully. You can now sign in.')
+    }
+    if (verifyError) {
+      toast.error(decodeURIComponent(verifyError))
+    }
+  }, [searchParams])
 
   return (
     <div className="w-full">
@@ -149,4 +151,16 @@ export default function SignInForm() {
       </div>
     </div>
   );
+}
+
+export default function SignInForm() {
+  return (
+    <Suspense fallback={
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <SignInFormContent />
+    </Suspense>
+  )
 }

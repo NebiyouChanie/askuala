@@ -77,6 +77,11 @@ const researchLevels = ['Undergraduate', 'Graduate', 'PhD', 'Professional']
 
 export default function AdminRegistrationAddPage() {
   type MinimalInstructor = { instructor_id: string; first_name: string; last_name: string }
+  interface InstructorData {
+    instructor_id: string;
+    first_name: string;
+    last_name: string;
+  }
   const [instructors, setInstructors] = useState<MinimalInstructor[]>([])
   const [loadingInstructors, setLoadingInstructors] = useState(false)
 
@@ -87,7 +92,7 @@ export default function AdminRegistrationAddPage() {
         const res = await fetch('/api/admin/instructors?limit=1000', { cache: 'no-store' })
         const data = await res.json()
         if (res.ok && data.success) {
-          setInstructors((data.data || []).map((i: any) => ({ instructor_id: i.instructor_id, first_name: i.first_name, last_name: i.last_name })))
+          setInstructors((data.data || []).map((i: InstructorData) => ({ instructor_id: i.instructor_id, first_name: i.first_name, last_name: i.last_name })))
         }
       } catch (e) {
       } finally {
@@ -310,7 +315,7 @@ export default function AdminRegistrationAddPage() {
   // Keep schema-aware course type in sync for conditional validation
   useEffect(() => {
     if (selectedCourse) {
-      form.setValue('courseType', selectedCourse as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+      form.setValue('courseType', selectedCourse as 'tutors' | 'tutees' | 'training' | 'research' | 'entrepreneurship', { shouldValidate: true, shouldDirty: true, shouldTouch: true })
     } else {
       form.setValue('courseType', undefined, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
     }
@@ -473,7 +478,7 @@ export default function AdminRegistrationAddPage() {
       }
 
       // Prepare course data based on course type
-      let courseData: any = {
+      let courseData: Record<string, unknown> = {
         userId,
         age: data.age,
         gender: data.gender,
@@ -601,9 +606,9 @@ export default function AdminRegistrationAddPage() {
       setSelectedUser(null)
       setSelectedCourse('')
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error)
-      toast.error(error.message || 'Registration failed')
+      toast.error(error instanceof Error ? error.message : 'Registration failed')
     } finally {
       setLoading(false)
     }

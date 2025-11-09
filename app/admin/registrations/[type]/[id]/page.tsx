@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 
 async function fetchRegistration(type: string, id: string) {
-  const hdrs = headers()
+  const hdrs = await headers()
   const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
   const proto = hdrs.get('x-forwarded-proto') || 'http'
   const base = `${proto}://${host}`
@@ -13,8 +13,8 @@ async function fetchRegistration(type: string, id: string) {
   return json?.data || null
 }
 
-export default async function RegistrationDetailPage({ params }: { params: { type: string; id: string } }) {
-  const { type, id } = params
+export default async function RegistrationDetailPage({ params }: { params: Promise<{ type: string; id: string }> }) {
+  const { type, id } = await params
   const allowed = ['tutors', 'tutees', 'training', 'research', 'entrepreneurship']
   if (!allowed.includes(type)) {
     return (
@@ -43,7 +43,7 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
   let instructorName: string | null = null
   if (data.instructor_id) {
     try {
-      const hdrs = headers()
+      const hdrs = await headers()
       const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
       const proto = hdrs.get('x-forwarded-proto') || 'http'
       const base = `${proto}://${host}`

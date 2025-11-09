@@ -16,11 +16,12 @@ const InstructorUpdateSchema = z.object({
   cvPath: z.string().nullable().optional(),
 })
 
-export async function GET(_request: NextRequest, { params }: { params: { instructor_id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ instructor_id: string }> }) {
   try {
+    const { instructor_id } = await params
     const row = await queryOne(
       `SELECT * FROM instructors WHERE instructor_id = ?`,
-      [params.instructor_id]
+      [instructor_id]
     )
     if (!row) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     return NextResponse.json({ success: true, data: row })
@@ -30,8 +31,9 @@ export async function GET(_request: NextRequest, { params }: { params: { instruc
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { instructor_id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ instructor_id: string }> }) {
   try {
+    const { instructor_id } = await params
     const body = await request.json()
     const parsed = InstructorUpdateSchema.safeParse(body)
     if (!parsed.success) {
@@ -59,14 +61,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { instru
     if (data.email || data.phone) {
       const dup = await queryOne(
         `SELECT instructor_id FROM instructors WHERE (email = ? OR (phone IS NOT NULL AND phone = ?)) AND instructor_id <> ? LIMIT 1`,
-        [data.email ?? '', data.phone ?? '', params.instructor_id]
+        [data.email ?? '', data.phone ?? '', instructor_id]
       )
       if (dup) {
         return NextResponse.json({ success: false, error: 'Another instructor with this email or phone exists' }, { status: 409 })
       }
     }
 
-    await update('instructors', { instructor_id: params.instructor_id }, updateData)
+    await update('instructors', { instructor_id }, updateData)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating instructor:', error)
@@ -74,9 +76,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { instru
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { instructor_id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ instructor_id: string }> }) {
   try {
-    await remove('instructors', { instructor_id: params.instructor_id })
+    const { instructor_id } = await params
+    await remove('instructors', { instructor_id })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting instructor:', error)

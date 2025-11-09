@@ -14,9 +14,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Upload, X, Clock, Calendar, Monitor, Users, User } from "lucide-react"
 import { toast } from "sonner"
 
+export const dynamic = "force-dynamic"
+
 const gradeLevels = ["KG", "1-4", "5-8", "9-12"]
 const subjects = ["Maths", "Physics", "Chemistry", "Biology", "English", "Science", "ALL"]
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+const isFileList = (v: unknown): v is FileList => {
+  const FileListCtor = typeof globalThis !== "undefined" ? (globalThis as any).FileList : undefined
+  return typeof FileListCtor !== "undefined" && v instanceof FileListCtor
+}
 
 const TutorSchema = z.object({
   age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
@@ -28,10 +35,10 @@ const TutorSchema = z.object({
   availableDays: z.array(z.string()).min(1, "Select at least one day"),
   deliveryMethod: z.enum(["online", "face-to-face"], { required_error: "Please select delivery method" }),
   cv: z
-    .instanceof(FileList)
-    .refine((files) => files && files.length > 0, "CV is required")
-    .refine((files) => files && files[0]?.type === "application/pdf", "PDF only")
-    .refine((files) => files && files[0]?.size <= 5 * 1024 * 1024, "Max 5MB"),
+    .any()
+    .refine((files) => isFileList(files) && files.length > 0, "CV is required")
+    .refine((files) => !isFileList(files) || files[0]?.type === "application/pdf", "PDF only")
+    .refine((files) => !isFileList(files) || files[0]?.size <= 5 * 1024 * 1024, "Max 5MB"),
 })
 
 type TutorFormValues = z.infer<typeof TutorSchema>
@@ -496,7 +503,7 @@ export default function TutorRegisterPage() {
                       </Button>
                     </div>
                   )}
-                  {errors.cv && <p className="text-sm text-[#FF6652]">{errors.cv.message}</p>}
+                  {errors.cv?.message ? <p className="text-sm text-[#FF6652]">{String(errors.cv.message)}</p> : null}
                 </div>
               </div>
 

@@ -10,9 +10,9 @@ const UserUpdateSchema = z.object({
   address: z.string().min(1).optional(),
 })
 
-export async function PUT(req: NextRequest, { params }: { params: { user_id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ user_id: string }> }) {
   try {
-    const { user_id } = params
+    const { user_id } = await params
     if (!user_id) {
       return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 })
     }
@@ -38,7 +38,13 @@ export async function PUT(req: NextRequest, { params }: { params: { user_id: str
       }
     }
 
-    const data: any = {}
+    const data: Partial<{
+      first_name: string
+      last_name: string
+      email: string
+      phone: string
+      address: string
+    }> = {}
     if (typeof first_name !== 'undefined') data.first_name = first_name
     if (typeof last_name !== 'undefined') data.last_name = last_name
     if (typeof email !== 'undefined') data.email = email

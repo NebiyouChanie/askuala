@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ interface RegistrationData {
     phone: string
     address: string
   }
-  data: any
+  data: Record<string, unknown>
   created_at: string
   payment_status?: 'paid' | 'unpaid'
   status?: 'pending' | 'accepted' | 'rejected'
@@ -63,7 +63,7 @@ const registrationTypes = [
   }
 ]
 
-export default function AdminRegistrationsPage() {
+function AdminRegistrationsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selectedType, setSelectedType] = useState<string>('')
@@ -144,7 +144,7 @@ export default function AdminRegistrationsPage() {
       const data = await response.json()
       
       if (data.success) {
-        const mappedRegistrations = data.data.map((item: any) => ({
+        const mappedRegistrations = data.data.map((item: Record<string, unknown>) => ({
           id: item.tutor_id || item.tutee_id || item.training_id || item.research_id || item.entrepreneurship_id,
           type: type,
           user: {
@@ -229,8 +229,8 @@ export default function AdminRegistrationsPage() {
       toast.success('Registration deleted')
       setDeleteTarget(null)
       fetchRegistrations(selectedType, currentPage)
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to delete')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete')
     } finally {
       setDeleting(false)
     }
@@ -573,5 +573,13 @@ export default function AdminRegistrationsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function RegistrationsPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <AdminRegistrationsPage />
+    </Suspense>
   )
 }
