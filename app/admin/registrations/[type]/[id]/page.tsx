@@ -117,7 +117,7 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
           )}
           {type === 'tutees' && (
             <div className="text-sm text-gray-700 space-y-1">
-              <div>Grade: {data.grade_level || 'N/A'}</div>
+              <div>Grade: {Array.isArray(data.grade_levels) ? (data.grade_levels.join(', ') || 'N/A') : (data.grade_level || 'N/A')}</div>
               <div>Subjects: {Array.isArray(data.subjects) ? data.subjects.join(', ') : 'N/A'}</div>
               <div>Schedule: {data.start_time} - {data.end_time}</div>
               <div>Days: {Array.isArray(data.available_days) ? data.available_days.join(', ') : 'N/A'}</div>

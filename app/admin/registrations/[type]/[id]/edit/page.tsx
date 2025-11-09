@@ -58,7 +58,7 @@ export default function EditRegistrationPage({ params }: Props) {
   // Tutee fields
   const [tuAge, setTuAge] = useState<number | "">("")
   const [tuGender, setTuGender] = useState<"male" | "female" | "">("")
-  const [tuGradeLevel, setTuGradeLevel] = useState<string>("")
+  const [tuGradeLevels, setTuGradeLevels] = useState<string[]>([])
   const [tuSubjects, setTuSubjects] = useState<string[]>([])
   const [tuStartTime, setTuStartTime] = useState<string>("")
   const [tuEndTime, setTuEndTime] = useState<string>("")
@@ -116,7 +116,7 @@ export default function EditRegistrationPage({ params }: Props) {
         } else if (type === 'tutees') {
           setTuAge(typeof r.age === 'number' ? r.age : (r.age ? Number(r.age) : ""))
           setTuGender((r.gender as any) || "")
-          setTuGradeLevel(r.grade_level || "")
+          setTuGradeLevels(Array.isArray(r.grade_levels) ? r.grade_levels : (r.grade_level ? [r.grade_level] : []))
           setTuSubjects(Array.isArray(r.subjects) ? r.subjects : [])
           setTuStartTime(r.start_time || "")
           setTuEndTime(r.end_time || "")
@@ -200,7 +200,7 @@ export default function EditRegistrationPage({ params }: Props) {
         payload = {
           age: typeof tuAge === 'number' ? tuAge : Number(tuAge || 0),
           gender: tuGender || undefined,
-          gradeLevel: tuGradeLevel || undefined,
+          gradeLevels: tuGradeLevels,
           subjects: tuSubjects,
           startTime: tuStartTime || undefined,
           endTime: tuEndTime || undefined,
@@ -426,13 +426,16 @@ export default function EditRegistrationPage({ params }: Props) {
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Grade Level</Label>
+                      <Label className="text-sm font-medium text-gray-700">Grade Levels</Label>
                       <div className="flex flex-wrap gap-2">
-                        {gradeLevels.map((g) => (
-                          <Badge key={g} variant={tuGradeLevel === g ? "default" : "outline"} className={`${tuGradeLevel === g ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'} cursor-pointer`} onClick={() => setTuGradeLevel(g)}>
-                            {g}
-                          </Badge>
-                        ))}
+                        {gradeLevels.map((g) => {
+                          const on = tuGradeLevels.includes(g)
+                          return (
+                            <Badge key={g} variant={on ? "default" : "outline"} className={`${on ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'} cursor-pointer`} onClick={() => setTuGradeLevels(on ? tuGradeLevels.filter(x => x !== g) : [...tuGradeLevels, g])}>
+                              {g}
+                            </Badge>
+                          )
+                        })}
                       </div>
                     </div>
                     <div className="space-y-2">

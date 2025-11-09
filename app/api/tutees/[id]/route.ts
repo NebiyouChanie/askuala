@@ -6,7 +6,7 @@ const TuteeUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
   age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
-  gradeLevel: z.string().min(1, "Grade level is required").optional(),
+  gradeLevels: z.array(z.string()).min(1, "Select at least one grade level").optional(),
   subjects: z.array(z.string()).min(1, "Select at least one subject").optional(),
   startTime: z.string().min(1, "Start time is required").optional(),
   endTime: z.string().min(1, "End time is required").optional(),
@@ -41,7 +41,7 @@ export async function GET(
         u.address,
         t.age,
         t.gender,
-        t.grade_level,
+        t.grade_levels,
         t.subjects,
         t.start_time,
         t.end_time,
@@ -65,6 +65,7 @@ export async function GET(
     // Parse JSON fields
     const parsedTutee = {
       ...tutee,
+      grade_levels: typeof (tutee as any).grade_levels === 'string' ? JSON.parse((tutee as any).grade_levels) : (tutee as any).grade_levels,
       subjects: typeof (tutee as any).subjects === 'string' ? JSON.parse((tutee as any).subjects) : (tutee as any).subjects,
       available_days: typeof (tutee as any).available_days === 'string' ? JSON.parse((tutee as any).available_days) : (tutee as any).available_days,
     }
@@ -120,7 +121,7 @@ export async function PUT(
     
     if (validatedData.age) updateData.age = validatedData.age
     if (validatedData.gender) updateData.gender = validatedData.gender
-    if (validatedData.gradeLevel) updateData.grade_level = validatedData.gradeLevel
+    if (validatedData.gradeLevels) updateData.grade_levels = JSON.stringify(validatedData.gradeLevels)
     if (validatedData.subjects) updateData.subjects = JSON.stringify(validatedData.subjects)
     if (validatedData.startTime) updateData.start_time = validatedData.startTime
     if (validatedData.endTime) updateData.end_time = validatedData.endTime
