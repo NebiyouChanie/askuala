@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import TuteeFields from '@/components/admin/registrations/TuteeFields'
+import TrainingFields from '@/components/admin/registrations/TrainingFields'
 
 interface User {
   user_id: string
@@ -120,7 +121,7 @@ export default function AdminRegistrationAddPage() {
     endTime: z.string().optional(),
     availableDays: z.array(z.string()).optional(),
     deliveryMethod: z.string().optional(),
-    trainingType: z.string().optional(),
+    trainingTypes: z.array(z.string()).optional(),
     studyArea: z.string().optional(),
     researchLevel: z.string().optional(),
     instructorId: z.string().optional(),
@@ -172,7 +173,7 @@ export default function AdminRegistrationAddPage() {
       endTime: '',
       availableDays: [],
       deliveryMethod: '',
-      trainingType: '',
+      trainingTypes: [],
       studyArea: '',
       researchLevel: '',
       instructorId: '',
@@ -253,7 +254,7 @@ export default function AdminRegistrationAddPage() {
       endTime: '',
       availableDays: [],
       deliveryMethod: '',
-      trainingType: '',
+      trainingTypes: [],
       studyArea: '',
       researchLevel: '',
       cv: null,
@@ -390,11 +391,11 @@ export default function AdminRegistrationAddPage() {
         case 'training':
           if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); hasValidationError = true }
           if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); hasValidationError = true }
-          if (!data.trainingType) { form.setError('trainingType' as any, { type: 'manual', message: 'Select training type' }); hasValidationError = true }
+          if (!data.trainingTypes || data.trainingTypes.length === 0) { form.setError('trainingTypes' as any, { type: 'manual', message: 'Select at least one training type' }); hasValidationError = true }
           if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); hasValidationError = true }
           courseData = {
             ...courseData,
-            trainingType: data.trainingType,
+            trainingTypes: data.trainingTypes,
             instructorId: data.instructorId || undefined,
           }
           break
@@ -459,7 +460,7 @@ export default function AdminRegistrationAddPage() {
         endTime: '',
         availableDays: [],
         deliveryMethod: '',
-        trainingType: '',
+        trainingTypes: [],
         studyArea: '',
         researchLevel: '',
         cv: null,
@@ -640,159 +641,7 @@ export default function AdminRegistrationAddPage() {
 
             {/* Training Form */}
             {selectedCourse === 'training' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Training Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-gray-700 font-medium">Age</FormLabel>
-                        <FormControl>
-                          <Input
-                            id="age"
-                            type="number"
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                            className="bg-white border-gray-300 text-gray-900"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-gray-700 font-medium">Gender</FormLabel>
-                        <FormControl>
-                          <select
-                            id="gender"
-                            value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                          >
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-              <FormField
-                control={form.control}
-                name="instructorId"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-gray-700 font-medium">Assign Instructor (optional)</FormLabel>
-                    <FormControl>
-                      <select
-                        id="trainingInstructor"
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
-                      >
-                        <option value="">No Instructor Assigned</option>
-                        {instructors.map((ins) => (
-                          <option key={ins.instructor_id} value={ins.instructor_id}>
-                            {ins.first_name} {ins.last_name}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-                <div>
-                  <Label className="text-gray-700">Training Type</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {trainingTypes.map((type) => (
-                      <Badge
-                        key={type}
-                        variant={(form.getValues('trainingType') || '') === type ? "default" : "outline"}
-                        className={`cursor-pointer ${
-                          (form.getValues('trainingType') || '') === type
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                        }`}
-                        onClick={() => form.setValue('trainingType', type, { shouldValidate: true })}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                  {form.formState.errors.trainingType && (
-                    <p className="text-sm text-red-500 mt-1">{String(form.formState.errors.trainingType.message || 'Select training type')}</p>
-                  )}
-                </div>
-
-              <FormField
-                control={form.control}
-                name="deliveryMethod"
-                render={({ field }) => {
-                  const value = field.value || ''
-                  const onlineChecked = value === 'online' || value === 'online-&-face-to-face'
-                  const f2fChecked = value === 'face-to-face' || value === 'online-&-face-to-face'
-                  const setFrom = (nextOnline: boolean, nextF2F: boolean) => {
-                    let next = ''
-                    if (nextOnline && nextF2F) next = 'online-&-face-to-face'
-                    else if (nextOnline) next = 'online'
-                    else if (nextF2F) next = 'face-to-face'
-                    field.onChange(next)
-                  }
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">Delivery Method</FormLabel>
-                      <div className="flex gap-4 mt-2">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="trainingDeliveryMethod"
-                            value="online"
-                            checked={field.value === 'online'}
-                            onChange={() => field.onChange('online')}
-                            className="mr-2"
-                          />
-                          <span className="text-gray-700">Online</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="trainingDeliveryMethod"
-                            value="face-to-face"
-                            checked={field.value === 'face-to-face'}
-                            onChange={() => field.onChange('face-to-face')}
-                            className="mr-2"
-                          />
-                          <span className="text-gray-700">Face-to-Face</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="trainingDeliveryMethod"
-                            value="online-&-face-to-face"
-                            checked={field.value === 'online-&-face-to-face'}
-                            onChange={() => field.onChange('online-&-face-to-face')}
-                            className="mr-2"
-                          />
-                          <span className="text-gray-700">Online & Face-to-Face</span>
-                        </label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )
-                }}
-              />
-              </div>
+              <TrainingFields form={form} trainingOptions={trainingTypes} instructors={instructors} />
             )}
 
             {/* Research Form */}

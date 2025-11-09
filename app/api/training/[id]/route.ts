@@ -6,7 +6,7 @@ const TrainingUpdateSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional(),
   age: z.number().optional(),
   gender: z.enum(["male", "female"]).optional(),
-  trainingType: z.string().min(1, "Training type is required").optional(),
+  trainingTypes: z.array(z.string()).min(1, "Select at least one training type").optional(),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]).optional(),
   paymentStatus: z.enum(["paid", "unpaid"]).optional(),
 })
@@ -37,7 +37,7 @@ export async function GET(
         u.address,
         t.age,
         t.gender,
-        t.training_type,
+        t.training_types,
         t.delivery_method,
         t.instructor_id,
         t.payment_status,
@@ -55,10 +55,14 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({
-      success: true,
-      data: training
-    })
+    const parsed = training ? {
+      ...training,
+      training_types: typeof (training as any).training_types === 'string'
+        ? JSON.parse((training as any).training_types)
+        : (training as any).training_types,
+    } : null
+
+    return NextResponse.json({ success: true, data: parsed })
 
   } catch (error) {
     console.error('Error fetching training registration:', error)
@@ -106,7 +110,7 @@ export async function PUT(
     
     if (validatedData.age) updateData.age = validatedData.age
     if (validatedData.gender) updateData.gender = validatedData.gender
-    if (validatedData.trainingType) updateData.training_type = validatedData.trainingType
+    if (validatedData.trainingTypes) updateData.training_types = JSON.stringify(validatedData.trainingTypes)
     if (validatedData.deliveryMethod) updateData.delivery_method = validatedData.deliveryMethod
     if (typeof (body as any).instructorId !== 'undefined') updateData.instructor_id = (body as any).instructorId || null
 

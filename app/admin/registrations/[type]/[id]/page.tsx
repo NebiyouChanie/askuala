@@ -126,7 +126,7 @@ export default async function RegistrationDetailPage({ params }: { params: { typ
           )}
           {type === 'training' && (
             <div className="text-sm text-gray-700 space-y-1">
-              <div>Training Type: {data.training_type || 'N/A'}</div>
+              <div>Training Types: {Array.isArray(data.training_types) ? (data.training_types.join(', ') || 'N/A') : (data.training_type || 'N/A')}</div>
               <div>Method: {data.delivery_method || 'N/A'}</div>
             </div>
           )}

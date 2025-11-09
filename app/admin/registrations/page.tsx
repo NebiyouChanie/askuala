@@ -255,7 +255,7 @@ export default function AdminRegistrationsPage() {
         }
       case 'training':
         return {
-          type: data.training_type || 'N/A',
+          type: Array.isArray(data.training_types) ? (data.training_types.join(', ') || 'N/A') : (data.training_type || 'N/A'),
           method: data.delivery_method || 'N/A'
         }
       case 'research':

@@ -68,7 +68,7 @@ export default function EditRegistrationPage({ params }: Props) {
   // Training fields
   const [trAge, setTrAge] = useState<number | "">("")
   const [trGender, setTrGender] = useState<"male" | "female" | "">("")
-  const [trTrainingType, setTrTrainingType] = useState<string>("")
+  const [trTrainingTypes, setTrTrainingTypes] = useState<string[]>([])
   const [trDeliveryMethod, setTrDeliveryMethod] = useState<"online" | "face-to-face" | "online-&-face-to-face" | "">("")
   const [trInstructorId, setTrInstructorId] = useState<string>("")
 
@@ -125,7 +125,7 @@ export default function EditRegistrationPage({ params }: Props) {
         } else if (type === 'training') {
           setTrAge(typeof r.age === 'number' ? r.age : (r.age ? Number(r.age) : ""))
           setTrGender((r.gender as any) || "")
-          setTrTrainingType(r.training_type || "")
+          setTrTrainingTypes(Array.isArray(r.training_types) ? r.training_types : (r.training_type ? [r.training_type] : []))
           setTrDeliveryMethod((r.delivery_method as any) || "")
           setTrInstructorId(r.instructor_id || "")
         } else if (type === 'entrepreneurship') {
@@ -153,7 +153,7 @@ export default function EditRegistrationPage({ params }: Props) {
     load()
     // Load instructors for selects where applicable
     const loadInstructors = async () => {
-      if (type === 'research' || type === 'entrepreneurship') {
+      if (type === 'research' || type === 'entrepreneurship' || type === 'training') {
         try {
           const res = await fetch(`/api/admin/instructors?limit=1000`)
           const json = await res.json()
@@ -211,7 +211,7 @@ export default function EditRegistrationPage({ params }: Props) {
         payload = {
           age: typeof trAge === 'number' ? trAge : Number(trAge || 0),
           gender: trGender || undefined,
-          trainingType: trTrainingType || undefined,
+          trainingTypes: trTrainingTypes,
           deliveryMethod: trDeliveryMethod || undefined,
           instructorId: trInstructorId || undefined,
         }
@@ -478,13 +478,16 @@ export default function EditRegistrationPage({ params }: Props) {
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Training Type</Label>
+                      <Label className="text-sm font-medium text-gray-700">Training Types</Label>
                       <div className="flex flex-wrap gap-2">
-                        {trainingOptions.map((opt) => (
-                          <Badge key={opt} variant={trTrainingType === opt ? "default" : "outline"} className={`${trTrainingType === opt ? 'bg-[#245D51] text-white' : 'border-[#245D51]/30 text-[#245D51] hover:bg-[#245D51]/5'} cursor-pointer`} onClick={() => setTrTrainingType(opt)}>
-                            {opt}
-                          </Badge>
-                        ))}
+                        {trainingOptions.map((opt) => {
+                          const on = trTrainingTypes.includes(opt)
+                          return (
+                            <Badge key={opt} variant={on ? "default" : "outline"} className={`${on ? 'bg-[#245D51] text-white' : 'border-[#245D51]/30 text-[#245D51] hover:bg-[#245D51]/5'} cursor-pointer`} onClick={() => setTrTrainingTypes(on ? trTrainingTypes.filter(x => x !== opt) : [...trTrainingTypes, opt])}>
+                              {opt}
+                            </Badge>
+                          )
+                        })}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -495,6 +498,21 @@ export default function EditRegistrationPage({ params }: Props) {
                         <label className="flex items-center"><input type="radio" name="trDeliveryMethod" value="online-&-face-to-face" checked={trDeliveryMethod === 'online-&-face-to-face'} onChange={() => setTrDeliveryMethod('online-&-face-to-face')} className="mr-2" /><span className="text-gray-700">Online & Face-to-Face</span></label>
                       </div>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Assign Instructor (optional)</Label>
+                    <select
+                      value={trInstructorId || ''}
+                      onChange={(e) => setTrInstructorId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
+                    >
+                      <option value="">No Instructor Assigned</option>
+                      {instructors.map((ins) => (
+                        <option key={ins.instructor_id} value={ins.instructor_id}>
+                          {ins.first_name} {ins.last_name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               )}

@@ -7,7 +7,7 @@ const TrainingCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   age: z.number(),
   gender: z.enum(["male", "female"]),
-  trainingType: z.string().min(1, "Training type is required"),
+  trainingTypes: z.array(z.string()).min(1, "Select at least one training type"),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]),
   instructorId: z.string().optional(),
 })
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (trainingType) {
-      whereConditions.push(`t.training_type = ?`)
+      whereConditions.push(`JSON_CONTAINS(t.training_types, JSON_QUOTE(?))`)
       params.push(trainingType)
     }
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         u.address,
         t.age,
         t.gender,
-        t.training_type,
+        t.training_types,
         t.delivery_method,
         t.instructor_id,
         t.payment_status,
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       age: validatedData.age,
       gender: validatedData.gender,
-      training_type: validatedData.trainingType,
+      training_types: JSON.stringify(validatedData.trainingTypes),
       delivery_method: validatedData.deliveryMethod,
       instructor_id: validatedData.instructorId || null,
     }
