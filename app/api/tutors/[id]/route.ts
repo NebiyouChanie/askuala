@@ -19,10 +19,10 @@ const TutorUpdateSchema = z.object({
 // GET /api/tutors/[id] - Get a specific tutor
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
@@ -67,9 +67,9 @@ export async function GET(
     // Parse JSON fields
     const parsedTutor = {
       ...tutor,
-      grade_levels: JSON.parse(tutor.grade_levels),
-      subjects: JSON.parse(tutor.subjects),
-      available_days: JSON.parse(tutor.available_days),
+      grade_levels: typeof (tutor as any).grade_levels === 'string' ? JSON.parse((tutor as any).grade_levels) : (tutor as any).grade_levels,
+      subjects: typeof (tutor as any).subjects === 'string' ? JSON.parse((tutor as any).subjects) : (tutor as any).subjects,
+      available_days: typeof (tutor as any).available_days === 'string' ? JSON.parse((tutor as any).available_days) : (tutor as any).available_days,
     }
 
     return NextResponse.json({
@@ -89,10 +89,10 @@ export async function GET(
 // PUT /api/tutors/[id] - Update a specific tutor
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     if (!id) {
@@ -163,10 +163,10 @@ export async function PUT(
 // DELETE /api/tutors/[id] - Delete a specific tutor
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(

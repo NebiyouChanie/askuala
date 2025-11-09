@@ -14,10 +14,10 @@ const TrainingUpdateSchema = z.object({
 // GET /api/training/[id] - Get a specific training registration
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
@@ -72,10 +72,10 @@ export async function GET(
 // PUT /api/training/[id] - Update a specific training registration
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     if (!id) {
@@ -143,10 +143,10 @@ export async function PUT(
 // DELETE /api/training/[id] - Delete a specific training registration
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(

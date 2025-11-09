@@ -22,9 +22,16 @@ export default function EditRegistrationPage({ params }: Props) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [instructors, setInstructors] = useState<Array<{ instructor_id: string; first_name: string; last_name: string }>>([])
+  const [userId, setUserId] = useState<string>("")
+  const [userFirstName, setUserFirstName] = useState<string>("")
+  const [userLastName, setUserLastName] = useState<string>("")
+  const [userEmail, setUserEmail] = useState<string>("")
+  const [userPhone, setUserPhone] = useState<string>("")
+  const [userAddress, setUserAddress] = useState<string>("")
 
   // Shared option lists (match registration forms)
   const gradeLevels = ["KG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+  const gradeLevelRanges = ["KG", "1-4", "5-8", "9-12"]
   const subjectsList = ["Maths", "Physics", "Chemistry", "Biology", "English", "Science", "ALL"]
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
   const trainingOptions = [
@@ -80,6 +87,8 @@ export default function EditRegistrationPage({ params }: Props) {
   const [toEndTime, setToEndTime] = useState<string>("")
   const [toAvailableDays, setToAvailableDays] = useState<string[]>([])
   const [toDeliveryMethod, setToDeliveryMethod] = useState<"online" | "face-to-face" | "online-&-face-to-face" | "">("")
+  const [toCvPath, setToCvPath] = useState<string>("")
+  const [toCvFile, setToCvFile] = useState<File | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -90,6 +99,12 @@ export default function EditRegistrationPage({ params }: Props) {
         if (!res.ok || !data?.data) throw new Error(data?.error || 'Failed to load')
         const r = data.data
         if (ignore) return
+        setUserId(r.user_id || "")
+        setUserFirstName(r.first_name || "")
+        setUserLastName(r.last_name || "")
+        setUserEmail(r.email || "")
+        setUserPhone(r.phone || "")
+        setUserAddress(r.address || "")
         if (type === 'research') {
           setAge(typeof r.age === 'number' ? r.age : (r.age ? Number(r.age) : ""))
           setGender((r.gender as any) || "")
@@ -127,6 +142,7 @@ export default function EditRegistrationPage({ params }: Props) {
           setToEndTime(r.end_time || "")
           setToAvailableDays(Array.isArray(r.available_days) ? r.available_days : [])
           setToDeliveryMethod((r.delivery_method as any) || "")
+          setToCvPath(r.cv_path || "")
         }
       } catch (e: any) {
         toast.error(e?.message || 'Failed to load registration')
@@ -154,6 +170,22 @@ export default function EditRegistrationPage({ params }: Props) {
     try {
       setSaving(true)
       let payload: any = {}
+      // Update user info first if we have a userId
+      if (userId) {
+        const ures = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: userFirstName,
+            last_name: userLastName,
+            email: userEmail,
+            phone: userPhone,
+            address: userAddress,
+          }),
+        })
+        const uj = await ures.json()
+        if (!ures.ok || !uj?.success) throw new Error(uj?.error || 'Failed to update user info')
+      }
       if (type === 'research') {
         payload = {
           age: typeof age === 'number' ? age : Number(age || 0),
@@ -191,6 +223,15 @@ export default function EditRegistrationPage({ params }: Props) {
           instructorId: enInstructorId || undefined,
         }
       } else if (type === 'tutors') {
+        let uploadedPath = ""
+        if (toCvFile) {
+          const fd = new FormData()
+          fd.append('cv', toCvFile)
+          const up = await fetch('/api/tutors/upload-cv', { method: 'POST', body: fd })
+          const uj = await up.json()
+          if (!up.ok || !uj?.success) throw new Error(uj?.error || 'Failed to upload CV')
+          uploadedPath = uj?.data?.filePath || ""
+        }
         payload = {
           age: typeof toAge === 'number' ? toAge : Number(toAge || 0),
           gender: toGender || undefined,
@@ -200,6 +241,7 @@ export default function EditRegistrationPage({ params }: Props) {
           endTime: toEndTime || undefined,
           availableDays: toAvailableDays,
           deliveryMethod: toDeliveryMethod || undefined,
+          cvPath: uploadedPath || toCvPath || undefined,
         }
       }
       const res = await fetch(`/api/${type}/${encodeURIComponent(id)}`, {
@@ -232,6 +274,33 @@ export default function EditRegistrationPage({ params }: Props) {
             <div className="py-8 text-sm text-gray-600">Loading...</div>
           ) : (
             <form onSubmit={onSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold text-gray-800">User Information</h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">First Name</Label>
+                    <Input value={userFirstName} onChange={(e) => setUserFirstName(e.target.value)} className="border-gray-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Last Name</Label>
+                    <Input value={userLastName} onChange={(e) => setUserLastName(e.target.value)} className="border-gray-300" />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Email</Label>
+                    <Input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="border-gray-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Phone</Label>
+                    <Input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="border-gray-300" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Address</Label>
+                  <Input value={userAddress} onChange={(e) => setUserAddress(e.target.value)} className="border-gray-300" />
+                </div>
+              </div>
               {(type === 'research' || type === 'tutees' || type === 'training' || type === 'entrepreneurship' || type === 'tutors') && (
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -456,7 +525,7 @@ export default function EditRegistrationPage({ params }: Props) {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Grade Levels</Label>
                     <div className="flex flex-wrap gap-2">
-                      {gradeLevels.map((g) => (
+                      {gradeLevelRanges.map((g) => (
                         <Badge key={g} variant={toGradeLevels.includes(g) ? "default" : "outline"} className={`${toGradeLevels.includes(g) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'} cursor-pointer`} onClick={() => setToGradeLevels(toGradeLevels.includes(g) ? toGradeLevels.filter(x => x !== g) : [...toGradeLevels, g])}>
                           {g}
                         </Badge>
@@ -494,6 +563,14 @@ export default function EditRegistrationPage({ params }: Props) {
                       <label className="flex items-center"><input type="radio" name="toDeliveryMethod" value="face-to-face" checked={toDeliveryMethod === 'face-to-face'} onChange={() => setToDeliveryMethod('face-to-face')} className="mr-2" /><span className="text-gray-700">Face-to-Face</span></label>
                       <label className="flex items-center"><input type="radio" name="toDeliveryMethod" value="online-&-face-to-face" checked={toDeliveryMethod === 'online-&-face-to-face'} onChange={() => setToDeliveryMethod('online-&-face-to-face')} className="mr-2" /><span className="text-gray-700">Online & Face-to-Face</span></label>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">CV Upload</Label>
+                    <div className="flex items-center gap-3">
+                      {toCvPath ? <a className="underline text-sm" href={toCvPath} target="_blank" rel="noreferrer">Current CV</a> : <span className="text-sm text-gray-500">No CV uploaded</span>}
+                      <Input type="file" accept=".pdf" onChange={(e) => setToCvFile(e.target.files?.[0] || null)} className="border-gray-300 max-w-xs" />
+                    </div>
+                    <p className="text-xs text-gray-500">PDF files only, max 5MB</p>
                   </div>
                 </div>
               )}

@@ -15,10 +15,10 @@ const ResearchUpdateSchema = z.object({
 // GET /api/research/[id] - Get a specific research registration
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
@@ -76,10 +76,10 @@ export async function GET(
 // PUT /api/research/[id] - Update a specific research registration
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     if (!id) {
@@ -150,10 +150,10 @@ export async function PUT(
 // DELETE /api/research/[id] - Delete a specific research registration
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(

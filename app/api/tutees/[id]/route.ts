@@ -18,10 +18,10 @@ const TuteeUpdateSchema = z.object({
 // GET /api/tutees/[id] - Get a specific tutee
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
@@ -65,8 +65,8 @@ export async function GET(
     // Parse JSON fields
     const parsedTutee = {
       ...tutee,
-      subjects: JSON.parse(tutee.subjects),
-      available_days: JSON.parse(tutee.available_days),
+      subjects: typeof (tutee as any).subjects === 'string' ? JSON.parse((tutee as any).subjects) : (tutee as any).subjects,
+      available_days: typeof (tutee as any).available_days === 'string' ? JSON.parse((tutee as any).available_days) : (tutee as any).available_days,
     }
 
     return NextResponse.json({
@@ -86,10 +86,10 @@ export async function GET(
 // PUT /api/tutees/[id] - Update a specific tutee
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     if (!id) {
@@ -159,10 +159,10 @@ export async function PUT(
 // DELETE /api/tutees/[id] - Delete a specific tutee
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
