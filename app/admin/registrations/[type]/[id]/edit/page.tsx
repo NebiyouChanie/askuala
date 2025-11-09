@@ -54,6 +54,7 @@ export default function EditRegistrationPage({ params }: Props) {
   const [deliveryMethod, setDeliveryMethod] = useState<"online" | "face-to-face" | "online-&-face-to-face" | "">("")
   const [researchGateId, setResearchGateId] = useState<string>("")
   const [orcid, setOrcid] = useState<string>("")
+  const [reInstructorId, setReInstructorId] = useState<string>("")
 
   // Tutee fields
   const [tuAge, setTuAge] = useState<number | "">("")
@@ -113,6 +114,7 @@ export default function EditRegistrationPage({ params }: Props) {
           setDeliveryMethod((r.delivery_method as any) || "")
           setResearchGateId(r.researchgate_id || "")
           setOrcid(r.orcid || "")
+          setReInstructorId(r.instructor_id || "")
         } else if (type === 'tutees') {
           setTuAge(typeof r.age === 'number' ? r.age : (r.age ? Number(r.age) : ""))
           setTuGender((r.gender as any) || "")
@@ -195,6 +197,7 @@ export default function EditRegistrationPage({ params }: Props) {
           deliveryMethod: deliveryMethod || undefined,
           researchGateId: researchGateId?.trim() ?? undefined,
           orcid: orcid?.trim() ?? undefined,
+          instructorId: reInstructorId || undefined,
         }
       } else if (type === 'tutees') {
         payload = {
@@ -394,8 +397,8 @@ export default function EditRegistrationPage({ params }: Props) {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Assign Instructor (optional)</Label>
                     <select
-                      value={(trInstructorId as any) || ''}
-                      onChange={(e) => setTrInstructorId(e.target.value)}
+                      value={reInstructorId || ''}
+                      onChange={(e) => setReInstructorId(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900"
                     >
                       <option value="">No Instructor Assigned</option>
