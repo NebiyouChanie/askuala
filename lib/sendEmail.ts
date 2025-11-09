@@ -2,7 +2,7 @@
 // @ts-ignore - allow without types
 import nodemailer from 'nodemailer';
 
-let transporter: any;
+let transporter: any = null;
 
 export function createTransporter(): any {
   if (!transporter) {
@@ -12,6 +12,10 @@ export function createTransporter(): any {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // Add timeout and connection settings
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
     });
   }
   return transporter;
