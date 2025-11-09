@@ -24,7 +24,7 @@ export default function ServicesPage() {
     <div className="min-h-screen bg-white">
       {/* Page Hero */}
       <section
-        className="text-white px-6 min-h-[50svh] relative pt-28"
+        className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28"
         style={{
           backgroundImage: "url(/images/hero-bg.jpg)",
           backgroundSize: "cover",
@@ -33,7 +33,7 @@ export default function ServicesPage() {
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
-          <h1 className="text-5xl font-bold">Services</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Services</h1>
         </div>
       </section>
 

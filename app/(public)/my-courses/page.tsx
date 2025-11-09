@@ -200,10 +200,6 @@ export default function CoursesPage() {
 
        // Filter out any null values
        const validCourses = mappedCourses.filter(course => course !== null)
-       console.log("🚀 ~ fetchUserCourses ~ mappedCourses:", mappedCourses)
-       console.log("🚀 ~ fetchUserCourses ~ mappedCourses.length:", mappedCourses.length)
-       console.log("🚀 ~ fetchUserCourses ~ validCourses:", validCourses)
-       console.log("🚀 ~ fetchUserCourses ~ validCourses.length:", validCourses.length)
        setCourses(validCourses)
     } catch (error) {
       console.error('Error fetching courses:', error)
@@ -249,20 +245,20 @@ export default function CoursesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50">
         <section
-          className="text-white px-6 min-h-[50svh] relative pt-28"
+          className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28"
           style={{ backgroundImage: "url(/images/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
         >
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
-            <h1 className="text-5xl font-bold">My Courses</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">My Courses</h1>
           </div>
         </section>
 
         <div className="max-w-6xl mx-auto px-6 py-12">
           <Card className="border-0 bg-white/80 backdrop-blur-sm">
             <CardContent className="p-12 text-center">
-              <div className="w-24 h-24 bg-[#FF6652]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <User className="w-12 h-12 text-[#FF6652]" />
+              <div className="lg:w-24 lg:h-24 w-16 h-16 bg-[#FF6652]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <User className="lg:w-12 lg:h-12 w-8 h-8 text-[#FF6652]" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Authentication Required</h2>
               <p className="text-gray-600 mb-8">
@@ -296,19 +292,19 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50">
       <section
-        className="text-white px-6 min-h-[50svh] relative pt-28"
+        className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28"
         style={{ backgroundImage: "url(/images/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
           <div>
-            <h1 className="text-5xl font-bold mb-4">My Courses</h1>
-            <p className="text-xl">Welcome back, {user.firstName}!</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 md:mb-4">My Courses</h1>
+            <p className="text-base sm:text-lg md:text-xl">Welcome back, {user.firstName}!</p>
           </div>
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-24">
         {/* User Information */}
         <Card className="border-0 bg-white/80 backdrop-blur-sm mb-8">
           <CardHeader>
@@ -316,7 +312,7 @@ export default function CoursesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-[#245D51] rounded-full flex items-center justify-center">
+              <div className="lg:w-20 lg:h-20 w-16 h-16 bg-[#245D51] rounded-full flex items-center justify-center">
                 <User className="w-10 h-10 text-white" />
               </div>
               <div>
@@ -330,8 +326,8 @@ export default function CoursesPage() {
         </Card>
 
         {/* Current Courses */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Active Programs</h2>
+        <div className="my-12">
+          <h2 className="text-xl font-bold text-gray-800 mb-6">Your Active Programs</h2>
           {courses.length === 0 ? (
             <Card className="border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
@@ -363,7 +359,7 @@ export default function CoursesPage() {
                           <IconComponent className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg font-semibold text-gray-800">{course?.title}</CardTitle>
+                          <CardTitle className="text-md font-semibold text-gray-800">{course?.title}</CardTitle>
                           <Badge variant="secondary" className="text-xs">{course.status}</Badge>
                         </div>
                       </div>
@@ -396,7 +392,7 @@ export default function CoursesPage() {
                           <IconComponent className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg font-semibold text-gray-800">{courseType.title}</CardTitle>
+                          <CardTitle className="text-md font-semibold text-gray-800">{courseType.title}</CardTitle>
                           <Badge variant="outline" className="text-xs">Available</Badge>
                         </div>
                       </div>

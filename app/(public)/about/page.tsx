@@ -34,29 +34,16 @@ const whyChooseUs = [
   },
 ]
 
-const instructors = [
-  {
-    name: "Brooklyn Simmons",
-    role: "INSTRUCTOR",
-    courses: 25,
-    students: 250,
-    image: "/images/logo.jpg",
-  },
-  {
-    name: "Courtney Henry",
-    role: "INSTRUCTOR",
-    courses: 32,
-    students: 280,
-    image: "/images/logo.jpg",
-  },
-  {
-    name: "Cameron Williamson",
-    role: "INSTRUCTOR",
-    courses: 40,
-    students: 350,
-    image: "/images/logo.jpg",
-  },
-]
+type PublicInstructor = {
+  instructor_id: string
+  first_name: string
+  last_name: string
+  bio: string | null
+  average_rating: number | null
+  rating_count: number | null
+  years_experience: number | null
+  hourly_rate_etb: number | null
+}
 
 const stats = [
   { number: "276K", label: "Worldwide Students" },
@@ -120,11 +107,39 @@ function Counter({ end, duration = 2000, suffix = "" }: { end: number; duration?
 }
 
 export default function AboutPage() {
+  const [loadingInstructors, setLoadingInstructors] = useState(false)
+  const [instructors, setInstructors] = useState<PublicInstructor[]>([])
+
+  const formatRating = (val: any) => {
+    const n = typeof val === 'number' ? val : parseFloat(val ?? '0')
+    return Number.isFinite(n) ? n.toFixed(2) : '0.00'
+  }
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingInstructors(true)
+      try {
+        const res = await fetch('/api/instructors?limit=6', { cache: 'no-store' })
+        const json = await res.json()
+        if (res.ok && json?.success) {
+          setInstructors(json.data || [])
+        } else {
+          setInstructors([])
+        }
+      } catch {
+        setInstructors([])
+      } finally {
+        setLoadingInstructors(false)
+      }
+    }
+    load()
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       {/* Page Hero */}
       <section
-        className="text-white px-6 min-h-[50svh] relative pt-28"
+        className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28"
         style={{
           backgroundImage: "url(/images/hero-bg.jpg)",
           backgroundSize: "cover",
@@ -133,7 +148,7 @@ export default function AboutPage() {
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
-          <h1 className="text-5xl font-bold">About</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">About</h1>
         </div>
       </section>
 
@@ -146,18 +161,18 @@ export default function AboutPage() {
             {whyChooseUs.map((item, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-8">
-                  <div className="flex items-start space-x-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
                     <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                        className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center ${
                         index === 1 ? "bg-[#FF6652]" : "bg-[#245D51]"
                       }`}
                     >
-                      <item.icon className="w-8 h-8 text-white" />
+                        <item.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900">{item.title}</h3>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
                       <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -167,7 +182,7 @@ export default function AboutPage() {
       </section>
 
       {/* HD Quality Video Section */}
-      <section className="py-20 bg-white">
+      {/* <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <Badge className="bg-[#FF6652] text-white mb-4">Live Classes</Badge>
@@ -186,18 +201,15 @@ export default function AboutPage() {
                 </Button>
               </div>
 
-              {/* Live indicator */}
               <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-2">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 <span>LIVE</span>
               </div>
 
-              {/* Student preview */}
               <div className="absolute bottom-4 left-4 bg-white rounded-lg p-2 shadow-lg">
                 <img src="/logo.jpg" alt="Student" className="w-12 h-12 rounded object-cover" />
               </div>
 
-              {/* Controls */}
               <div className="absolute bottom-4 right-4 flex space-x-2">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
                   <span className="text-[#245D51]">📞</span>
@@ -212,10 +224,10 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Statistics Section */}
-      <section className="py-20 bg-[#245D51] text-white">
+      {/* <section className="py-20 bg-[#245D51] text-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             {stats.map((stat, index) => {
@@ -236,52 +248,60 @@ export default function AboutPage() {
             })}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Expert Instructors Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div>
+          <div className="mb-12">
               <Badge className="bg-[#FF6652] text-white mb-4">Instructor</Badge>
               <h2 className="text-4xl font-bold text-gray-900">Our Expert Instructor</h2>
-            </div>
-            <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-6 py-3">See All Instructor</Button>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {instructors.map((instructor, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+            {instructors.map((ins) => {
+              const name = `${ins.first_name} ${ins.last_name}`
+              const avg = ins.average_rating ?? 0
+              const count = ins.rating_count ?? 0
+              return (
+                <Card key={ins.instructor_id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-0">
                   <div className="relative">
                     <img
-                      src={instructor.image || "/placeholder.svg"}
-                      alt={instructor.name}
+                        src={"/images/logo.jpg"}
+                        alt={name}
                       className="w-full h-64 object-cover rounded-t-lg"
                     />
-                     
                   </div>
 
                   <div className="p-6">
                     <div className="text-center mb-4">
-                      <p className="text-sm text-gray-500 mb-1">{instructor.role}</p>
-                      <h3 className="text-xl font-bold text-gray-900">{instructor.name}</h3>
+                        <p className="text-sm text-gray-500 mb-1">INSTRUCTOR</p>
+                        <h3 className="text-xl font-bold text-gray-900">{name}</h3>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span>{instructor.courses} Courses</span>
+                          <span>{formatRating(avg)} ({count})</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <span>👥</span>
-                        <span>{instructor.students}+ Students</span>
+                        {ins.years_experience != null && <div>{ins.years_experience} yrs</div>}
                       </div>
-                    </div>
+                      {ins.bio && <p className="text-sm text-gray-700 line-clamp-4">{ins.bio}</p>}
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              )
+            })}
+            {instructors.length === 0 && !loadingInstructors && (
+              <div className="text-gray-600">No instructors found.</div>
+            )}
+          </div>
+
+          <div className="mt-10 flex justify-center">
+            <Link href="/instructors">
+              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-6 py-3">See All Instructors</Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -24,10 +24,10 @@ function VerifyInfoPageContent() {
 
   return (
     <div className="w-full">
-      <section className="text-white px-6 min-h-[40svh] relative pt-28" style={{ backgroundImage: "url(/images/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
+      <section className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28" style={{ backgroundImage: "url(/images/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(40svh_-_7rem)] flex items-center">
-          <h1 className="text-5xl font-bold">Verify Your Email</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Verify Your Email</h1>
         </div>
       </section>
       <div className="flex flex-col gap-6 w-full max-w-lg mx-auto px-6 py-12">

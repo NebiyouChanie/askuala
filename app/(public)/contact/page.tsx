@@ -61,7 +61,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white">
       {/* Page Hero */}
       <section
-        className="text-white px-6 min-h-[50svh] relative pt-28"
+        className="text-white px-4 sm:px-6 min-h-[40svh] md:min-h-[50svh] relative pt-20 md:pt-28"
         style={{
           backgroundImage: "url(/images/hero-bg.jpg)",
           backgroundSize: "cover",
@@ -70,7 +70,7 @@ export default function ContactPage() {
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
-          <h1 className="text-5xl font-bold">Contact Us</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Contact Us</h1>
         </div>
       </section>
 
@@ -118,7 +118,7 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-8">Send Us Message</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-6 md:mb-8">Send Us Message</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
