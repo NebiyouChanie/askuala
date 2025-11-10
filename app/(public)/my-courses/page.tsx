@@ -144,11 +144,16 @@ export default function CoursesPage() {
            }
          } else if (course.tutee_id) {
            const subjects = Array.isArray(course.subjects) ? course.subjects : (typeof course.subjects === 'string' ? JSON.parse(course.subjects) : [])
+           const gradeLevels = Array.isArray(course.grade_levels)
+             ? course.grade_levels
+             : (typeof course.grade_levels === 'string'
+                 ? (() => { try { return JSON.parse(course.grade_levels) } catch { return [] } })()
+                 : (course.grade_level ? [course.grade_level] : []))
            courseData = {
              id: course.tutee_id,
              type: 'tutee',
              title: 'Student Profile',
-             description: `Learning ${subjects.join(', ')} at grade ${course.grade_level}`,
+             description: `Learning ${subjects.join(', ')} at grade ${gradeLevels.join(', ') || 'N/A'}`,
              status: 'Active',
              createdAt: course.created_at,
              details: course,

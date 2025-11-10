@@ -30,12 +30,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'Instructor not found' }, { status: 404 })
     }
 
-    // Check if user already rated this instructor
-    const already = await queryOne<{ r: number }>('SELECT 1 as r FROM instructor_ratings WHERE instructor_id = ? AND user_id = ? LIMIT 1', [instructor_id, userId])
-    if (already) {
-      return NextResponse.json({ success: false, error: 'You have already rated this instructor' }, { status: 409 })
-    }
-
     // Verify user has an assignment with this instructor in any applicable registration
     const assignedTraining = await queryOne<{ r: number }>('SELECT 1 as r FROM trainings WHERE user_id = ? AND instructor_id = ? LIMIT 1', [userId, instructor_id])
     const assignedResearch = await queryOne<{ r: number }>('SELECT 1 as r FROM researches WHERE user_id = ? AND instructor_id = ? LIMIT 1', [userId, instructor_id])
@@ -43,9 +37,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!assignedTraining && !assignedResearch && !assignedEntre) {
       return NextResponse.json({ success: false, error: 'You can only rate instructors who taught you' }, { status: 403 })
     }
-
-    // Record rating
-    await execute('INSERT INTO instructor_ratings (instructor_id, user_id, rating, created_at) VALUES (?, ?, ?, NOW())', [instructor_id, userId, rating])
 
     // Atomic aggregate update
     await execute(
