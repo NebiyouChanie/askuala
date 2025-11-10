@@ -14,8 +14,9 @@ import { User } from "lucide-react"
 import { toast } from "sonner"
 
 const EntreSchema = z.object({
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
 })
 
 type EntreFormValues = z.infer<typeof EntreSchema>
@@ -235,6 +236,31 @@ export default function EntrepreneurshipRegisterPage() {
                     />
                     {errors.gender && <p className="text-sm text-[#FF6652]">{errors.gender.message}</p>}
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Preferred Delivery Method *</Label>
+                  <Controller
+                    name="deliveryMethod"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="flex gap-6">
+                        <label className="flex items-center space-x-2">
+                          <input type="radio" value="online" checked={field.value === 'online'} onChange={() => field.onChange('online')} />
+                          <span>Online</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input type="radio" value="face-to-face" checked={field.value === 'face-to-face'} onChange={() => field.onChange('face-to-face')} />
+                          <span>Face-to-Face</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input type="radio" value="online-&-face-to-face" checked={field.value === 'online-&-face-to-face'} onChange={() => field.onChange('online-&-face-to-face')} />
+                          <span>Online & Face-to-Face</span>
+                        </label>
+                      </div>
+                    )}
+                  />
+                  {errors.deliveryMethod && <p className="text-sm text-[#FF6652]">{errors.deliveryMethod.message}</p>}
                 </div>
               </div>
 

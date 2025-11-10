@@ -154,17 +154,23 @@ export default function CoursesPage() {
              details: course,
              icon: GraduationCap
            }
-         } else if (course.training_id) {
-           courseData = {
-             id: course.training_id,
-             type: 'training',
-             title: 'Training Program',
-             description: `${course.training_type} training (${course.delivery_method})`,
-             status: 'Active',
-             createdAt: course.created_at,
-             details: course,
-             icon: Monitor
-           }
+        } else if (course.training_id) {
+          const trainingTypes = Array.isArray(course.training_types)
+            ? course.training_types
+            : (typeof course.training_types === 'string'
+                ? (() => { try { return JSON.parse(course.training_types) } catch { return [] } })()
+                : (course.training_type ? [course.training_type] : []))
+          const trainingLabel = trainingTypes.length > 0 ? trainingTypes.join(', ') : 'Training'
+          courseData = {
+            id: course.training_id,
+            type: 'training',
+            title: 'Training Program',
+            description: `${trainingLabel} (${course.delivery_method || 'N/A'})`,
+            status: 'Active',
+            createdAt: course.created_at,
+            details: course,
+            icon: Monitor
+          }
          } else if (course.research_id) {
            courseData = {
              id: course.research_id,

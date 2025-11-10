@@ -27,9 +27,9 @@ const trainingOptions = [
 ]
 
 const TrainingSchema = z.object({
-  age: z.number().min(16, "Must be at least 16 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
-  trainingType: z.string().min(1, "Training Type is required"),
+  trainingTypes: z.array(z.string()).min(1, "Select at least one training type"),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
 })
 
@@ -37,7 +37,7 @@ type TrainingFormValues = z.infer<typeof TrainingSchema>
 
 export default function TrainingRegisterPage() {
   const [submitted, setSubmitted] = useState(false)
-  const [selectedTrainingType, setSelectedTrainingType] = useState<string>("")
+  const [selectedTrainingTypes, setSelectedTrainingTypes] = useState<string[]>([])
   const [user, setUser] = useState<{ userId: string; firstName: string; lastName: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
@@ -52,7 +52,7 @@ export default function TrainingRegisterPage() {
   } = useForm<TrainingFormValues>({ 
     resolver: zodResolver(TrainingSchema),
     defaultValues: {
-      trainingType: "",
+      trainingTypes: [],
     }
   })
 
@@ -85,9 +85,12 @@ export default function TrainingRegisterPage() {
     fetchUser()
   }, [])
 
-  const selectTrainingType = (type: string) => {
-    setSelectedTrainingType(type)
-    setValue("trainingType", type)
+  const toggleTrainingType = (type: string) => {
+    const next = selectedTrainingTypes.includes(type)
+      ? selectedTrainingTypes.filter(t => t !== type)
+      : [...selectedTrainingTypes, type]
+    setSelectedTrainingTypes(next)
+    setValue("trainingTypes", next)
   }
 
   const onSubmit = async (data: TrainingFormValues) => {
@@ -118,7 +121,7 @@ export default function TrainingRegisterPage() {
         toast.success("Registration successful! Welcome to our training program.")
         setSubmitted(true)
         reset()
-        setSelectedTrainingType("")
+        setSelectedTrainingTypes([])
         setTimeout(() => {
           setSubmitted(false)
           window.location.href = '/my-courses'
@@ -264,27 +267,27 @@ export default function TrainingRegisterPage() {
                 </div>
               </div>
 
-              {/* Training Type */}
+              {/* Training Types */}
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800 border-b-2 border-[#245D51]/20 pb-2">Training Type *</h3>
-                <p className="text-sm text-gray-600">Select the type of training you're interested in</p>
+                <h3 className="text-xl font-semibold text-gray-800 border-b-2 border-[#245D51]/20 pb-2">Training Types *</h3>
+                <p className="text-sm text-gray-600">Select the type(s) of training you're interested in (you can select multiple)</p>
                 <div className="flex flex-wrap gap-3">
                   {trainingOptions.map((type) => (
                     <Badge
                       key={type}
-                      variant={selectedTrainingType === type ? "default" : "outline"}
+                      variant={selectedTrainingTypes.includes(type) ? "default" : "outline"}
                       className={`cursor-pointer px-4 py-2 text-sm transition-all ${
-                        selectedTrainingType === type
+                        selectedTrainingTypes.includes(type)
                           ? "bg-[#245D51] text-white hover:bg-[#1e4a42]"
                           : "border-[#245D51]/30 text-[#245D51] hover:bg-[#245D51]/5"
                       }`}
-                      onClick={() => selectTrainingType(type)}
+                      onClick={() => toggleTrainingType(type)}
                     >
                       {type}
                     </Badge>
                   ))}
                 </div>
-                {errors.trainingType && <p className="text-sm text-[#FF6652]">{errors.trainingType.message}</p>}
+                {errors.trainingTypes && <p className="text-sm text-[#FF6652]">{errors.trainingTypes.message}</p>}
               </div>
 
               {/* Delivery Method */}

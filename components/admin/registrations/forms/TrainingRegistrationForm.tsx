@@ -26,7 +26,7 @@ const TrainingSchema = z.object({
 		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
 		z.string().optional()
 	),
-	age: z.number().int().min(1, 'Age is required'),
+	age: z.number().int(),
 	gender: z.enum(['male','female'], { required_error: 'Gender is required' }),
 	trainingTypes: z.array(z.string()).min(1, 'Select at least one training type'),
 	deliveryMethod: z.enum(['online','face-to-face','online-&-face-to-face'], { required_error: 'Select delivery method' }),

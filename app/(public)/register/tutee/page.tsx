@@ -19,21 +19,42 @@ const subjects = ["Maths", "Physics", "Chemistry", "Biology", "English", "Scienc
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 const TuteeSchema = z.object({
-  age: z.number().min(5, "Must be at least 5 years old").max(18, "Must be under 18 years old"),
+  age: z.number().min(1, "Age is required"),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
-  gradeLevel: z.string().min(1, "Please select your grade level"),
+  gradeLevels: z.array(z.string()).min(1, "Select at least one grade level"),
   subjects: z.array(z.string()).min(1, "Select at least one subject"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time (HH:MM)"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time (HH:MM)"),
   availableDays: z.array(z.string()).min(1, "Select at least one day"),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
+}).superRefine((val, ctx) => {
+  const startStr = (val.startTime ?? '').trim()
+  const endStr = (val.endTime ?? '').trim()
+  const timeRe = /^\d{2}:\d{2}$/
+  if (!timeRe.test(startStr) || !timeRe.test(endStr)) {
+    return
+  }
+  const [sh, sm] = startStr.split(":").map((n) => parseInt(n, 10))
+  const [eh, em] = endStr.split(":").map((n) => parseInt(n, 10))
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) {
+    return
+  }
+  const startMin = sh * 60 + sm
+  const endMin = eh * 60 + em
+  if (endMin <= startMin) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time must be after start time",
+      path: ["endTime"],
+    })
+  }
 })
 
 type TuteeFormValues = z.infer<typeof TuteeSchema>
 
 export default function TuteeRegisterPage() {
   const [submitted, setSubmitted] = useState(false)
-  const [selectedGradeLevel, setSelectedGradeLevel] = useState<string>("")
+  const [selectedGradeLevels, setSelectedGradeLevels] = useState<string[]>([])
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [selectedDays, setSelectedDays] = useState<string[]>([])
   const [user, setUser] = useState<{ userId: string; firstName: string; lastName: string; email: string } | null>(null)
@@ -50,7 +71,7 @@ export default function TuteeRegisterPage() {
   } = useForm<TuteeFormValues>({ 
     resolver: zodResolver(TuteeSchema),
     defaultValues: {
-      gradeLevel: "",
+      gradeLevels: [],
       subjects: [],
       availableDays: [],
     }
@@ -85,9 +106,12 @@ export default function TuteeRegisterPage() {
     fetchUser()
   }, [])
 
-  const selectGradeLevel = (grade: string) => {
-    setSelectedGradeLevel(grade)
-    setValue("gradeLevel", grade)
+  const toggleGradeLevel = (grade: string) => {
+    const newSelection = selectedGradeLevels.includes(grade)
+      ? selectedGradeLevels.filter(g => g !== grade)
+      : [...selectedGradeLevels, grade]
+    setSelectedGradeLevels(newSelection)
+    setValue("gradeLevels", newSelection)
   }
 
   const toggleSubject = (subject: string) => {
@@ -134,7 +158,7 @@ export default function TuteeRegisterPage() {
         toast.success("Registration successful! Welcome as a tutee.")
     setSubmitted(true)
     reset()
-        setSelectedGradeLevel("")
+        setSelectedGradeLevels([])
         setSelectedSubjects([])
         setSelectedDays([])
         setTimeout(() => {
@@ -282,27 +306,27 @@ export default function TuteeRegisterPage() {
                 </div>
               </div>
 
-              {/* Grade Level */}
+              {/* Grade Levels */}
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800 border-b-2 border-[#245D51]/20 pb-2">Current Grade Level *</h3>
-                <p className="text-sm text-gray-600">Select your current grade level</p>
+                <h3 className="text-xl font-semibold text-gray-800 border-b-2 border-[#245D51]/20 pb-2">Current Grade Level(s) *</h3>
+                <p className="text-sm text-gray-600">Select your current grade level(s) (you can select multiple)</p>
                 <div className="flex flex-wrap gap-3">
                   {gradeLevels.map((grade) => (
                     <Badge
                       key={grade}
-                      variant={selectedGradeLevel === grade ? "default" : "outline"}
+                      variant={selectedGradeLevels.includes(grade) ? "default" : "outline"}
                       className={`cursor-pointer px-4 py-2 text-sm transition-all ${
-                        selectedGradeLevel === grade
+                        selectedGradeLevels.includes(grade)
                           ? "bg-[#245D51] text-white hover:bg-[#1e4a42]"
                           : "border-[#245D51]/30 text-[#245D51] hover:bg-[#245D51]/5"
                       }`}
-                      onClick={() => selectGradeLevel(grade)}
+                      onClick={() => toggleGradeLevel(grade)}
                     >
                       {grade}
                     </Badge>
                   ))}
                 </div>
-                {errors.gradeLevel && <p className="text-sm text-[#FF6652]">{errors.gradeLevel.message}</p>}
+                {errors.gradeLevels && <p className="text-sm text-[#FF6652]">{errors.gradeLevels.message}</p>}
               </div>
 
               {/* Subjects */}

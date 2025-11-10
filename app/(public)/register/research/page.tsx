@@ -15,11 +15,35 @@ import { Monitor, Users, BookOpen, User } from "lucide-react"
 import { toast } from "sonner"
 
 const ResearchSchema = z.object({
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
   studyArea: z.string().min(1, "Research area is required"),
   researchLevel: z.enum(["undergraduate", "graduate", "phd", "professional"], { required_error: "Please select your research level" }),
   deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
+  researchGateId: z
+    .string()
+    .trim()
+    .transform((v) => (v === '' ? undefined : v))
+    .refine(
+      (v) =>
+        v === undefined ||
+        /^(https?:\/\/)?(www\.)?researchgate\.net\/.+$/i.test(String(v)) ||
+        /^[A-Za-z0-9_.-]{3,}$/i.test(String(v)),
+      { message: 'Enter a valid ResearchGate profile URL or username' }
+    )
+    .optional(),
+  orcid: z
+    .string()
+    .trim()
+    .transform((v) => (v === '' ? undefined : v))
+    .refine(
+      (v) =>
+        v === undefined ||
+        /^(https?:\/\/)?(www\.)?orcid\.org\/(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)) ||
+        /^(\d{4}-){3}\d{3}[\dX]$/i.test(String(v)),
+      { message: 'Enter a valid ORCID (e.g., 0000-0002-1825-0097) or profile URL' }
+    )
+    .optional(),
 })
 
 type ResearchFormValues = z.infer<typeof ResearchSchema>
@@ -280,6 +304,27 @@ export default function ResearchRegisterPage() {
                       )}
                     />
                     {errors.researchLevel && <p className="text-sm text-[#FF6652]">{errors.researchLevel.message}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">ResearchGate ID or URL (optional)</Label>
+                      <Input
+                        {...register("researchGateId")}
+                        placeholder="username or https://researchgate.net/profile/..."
+                        className="border-gray-300 focus:border-[#245D51] focus:ring-[#245D51]"
+                      />
+                      {errors.researchGateId && <p className="text-sm text-[#FF6652]">{errors.researchGateId.message}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">ORCID (optional)</Label>
+                      <Input
+                        {...register("orcid")}
+                        placeholder="0000-0002-1825-0097 or https://orcid.org/0000-..."
+                        className="border-gray-300 focus:border-[#245D51] focus:ring-[#245D51]"
+                      />
+                      {errors.orcid && <p className="text-sm text-[#FF6652]">{errors.orcid.message}</p>}
+                    </div>
                   </div>
                 </div>
               </div>

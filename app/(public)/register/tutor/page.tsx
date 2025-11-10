@@ -26,19 +26,41 @@ const isFileList = (v: unknown): v is FileList => {
 }
 
 const TutorSchema = z.object({
-  age: z.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.number(),
   gender: z.enum(["male", "female"], { required_error: "Please select your gender" }),
   gradeLevels: z.array(z.string()).min(1, "Select at least one grade level"),
   subjects: z.array(z.string()).min(1, "Select at least one subject"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time (HH:MM)"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time (HH:MM)"),
   availableDays: z.array(z.string()).min(1, "Select at least one day"),
-  deliveryMethod: z.enum(["online", "face-to-face"], { required_error: "Please select delivery method" }),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"], { required_error: "Please select delivery method" }),
   cv: z
     .any()
     .refine((files) => isFileList(files) && files.length > 0, "CV is required")
     .refine((files) => !isFileList(files) || files[0]?.type === "application/pdf", "PDF only")
     .refine((files) => !isFileList(files) || files[0]?.size <= 5 * 1024 * 1024, "Max 5MB"),
+}).superRefine((val, ctx) => {
+  const startStr = (val.startTime ?? '').trim()
+  const endStr = (val.endTime ?? '').trim()
+  const timeRe = /^\d{2}:\d{2}$/
+  if (!timeRe.test(startStr) || !timeRe.test(endStr)) {
+    // Let the field-level regex validations handle malformed times
+    return
+  }
+  const [sh, sm] = startStr.split(":").map((n) => parseInt(n, 10))
+  const [eh, em] = endStr.split(":").map((n) => parseInt(n, 10))
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) {
+    return
+  }
+  const startMin = sh * 60 + sm
+  const endMin = eh * 60 + em
+  if (endMin <= startMin) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time must be after start time",
+      path: ["endTime"],
+    })
+  }
 })
 
 type TutorFormValues = z.infer<typeof TutorSchema>
@@ -198,6 +220,11 @@ export default function TutorRegisterPage() {
         }, 2000)
       } else {
         const error = await response.json()
+        if (error?.details && Array.isArray(error.details)) {
+          error.details.forEach((err: any) => { if (err?.message) toast.error(err.message) })
+        } else {
+          toast.error(error?.error || "Registration failed. Please try again.")
+        }
         console.error("Registration failed:", error)
       }
     } catch (error) {
@@ -396,6 +423,13 @@ export default function TutorRegisterPage() {
                         <Label htmlFor="face-to-face" className="cursor-pointer flex items-center gap-2">
                           <Users className="w-4 h-4" />
                           Face-to-Face
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="online-&-face-to-face" id="online-and-face-to-face" />
+                        <Label htmlFor="online-and-face-to-face" className="cursor-pointer flex items-center gap-2">
+                          <Monitor className="w-4 h-4" />
+                          Online & Face-to-Face
                         </Label>
                       </div>
                     </RadioGroup>

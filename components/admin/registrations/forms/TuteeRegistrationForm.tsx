@@ -26,7 +26,7 @@ const TuteeSchema = z.object({
 		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
 		z.string().optional()
 	),
-	age: z.number().int().min(1, 'Age is required'),
+	age: z.number().int(),
 	gender: z.enum(['male','female'], { required_error: 'Gender is required' }),
 	gradeLevels: z.array(z.string()).min(1, 'Select at least one grade level'),
 	subjects: z.array(z.string()).min(1, 'Select at least one subject'),

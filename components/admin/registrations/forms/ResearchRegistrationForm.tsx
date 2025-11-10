@@ -20,7 +20,7 @@ const ResearchSchema = z.object({
 	address: z.string().min(1, 'Address is required'),
 	password: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().min(8, 'Password must be at least 8 characters').optional()),
 	confirmPassword: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().optional()),
-	age: z.number().int().min(1, 'Age is required'),
+	age: z.number().int(),
 	gender: z.enum(['male','female'], { required_error: 'Gender is required' }),
 	studyArea: z.string().min(1, 'Study area is required'),
 	researchLevel: z.enum(['undergraduate','graduate','phd','professional'], { required_error: 'Select research level' }),
