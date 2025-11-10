@@ -5,9 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users, Calendar, Mail, Phone, MapPin, Eye } from 'lucide-react'
+import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users, Eye, MoreVertical } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface RegistrationData {
   id: string
@@ -413,35 +420,60 @@ function AdminRegistrationsPage() {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                              <div className="inline-flex gap-2 items-center">
-                                <Link href={`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}`} className="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 hover:bg-gray-50">
-                                  <Eye className="w-4 h-4 text-gray-700" />
-                                </Link>
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(registration)}>Edit</Button>
-                                <Button size="sm" variant="destructive" onClick={() => requestDelete(registration)}>Delete</Button>
-                                {registration.payment_status !== 'paid' ? (
-                                  <Button size="sm" className="bg-[#245D51] hover:bg-[#245D51]/90 text-white" onClick={() => markAsPaid(registration.type, registration.id)}>Paid</Button>
-                                ) : (
-                                  <Button size="sm" variant="outline" onClick={() => markAsUnpaid(registration.type, registration.id)}>Unpaid</Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant={registration.status === 'accepted' ? 'outline' : 'default'}
-                                  className={registration.status === 'accepted' ? '' : 'bg-green-600 hover:bg-green-700 text-white'}
-                                  onClick={() => setStatus(registration.type, registration.id, 'accepted')}
-                                  disabled={registration.status === 'accepted'}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant={registration.status === 'rejected' ? 'outline' : 'destructive'}
-                                  onClick={() => setStatus(registration.type, registration.id, 'rejected')}
-                                  disabled={registration.status === 'rejected'}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="inline-flex items-center gap-2">
+                                    <MoreVertical className="w-4 h-4" />
+                                    Actions
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="min-w-[180px]">
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/admin/registrations/${registration.type}/${encodeURIComponent(registration.id)}`} className="flex items-center gap-2">
+                                      <Eye className="w-4 h-4" />
+                                      View
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEdit(registration)}>
+                                    Edit
+                                  </DropdownMenuItem>
+                                  {registration.type === 'tutors' && (registration.data as any)?.cv_path ? (
+                                    <DropdownMenuItem onClick={() => downloadCV(String((registration.data as any).cv_path), registration.user.first_name, registration.user.last_name)}>
+                                      Download CV
+                                    </DropdownMenuItem>
+                                  ) : null}
+                                  <DropdownMenuSeparator />
+                                  {registration.payment_status !== 'paid' ? (
+                                    <DropdownMenuItem onClick={() => markAsPaid(registration.type, registration.id)}>
+                                      Mark as Paid
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => markAsUnpaid(registration.type, registration.id)}>
+                                      Mark as Unpaid
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setStatus(registration.type, registration.id, 'accepted')}
+                                    disabled={registration.status === 'accepted'}
+                                  >
+                                    Accept
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => setStatus(registration.type, registration.id, 'rejected')}
+                                    disabled={registration.status === 'rejected'}
+                                  >
+                                    Reject
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => requestDelete(registration)}
+                                    data-variant="destructive"
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </td>
                           </tr>
                         )
