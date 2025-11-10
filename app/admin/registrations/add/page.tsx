@@ -122,7 +122,8 @@ export default function AdminRegistrationAddPage() {
       .union([z.number().int().min(1, 'Age is required'), z.undefined()])
       .optional(),
     gender: z.enum(['male','female']).optional(),
-    gradeLevels: z.array(z.enum(['KG','1-4','5-8','9-12'])).optional(),
+		// Accept both tutor grade ranges and tutee single-grade values; enforce in course-specific rules
+		gradeLevels: z.array(z.string()).optional(),
     gradeLevel: z.string().optional(),
     subjects: z.array(z.enum(['Maths','Physics','Chemistry','Biology','English','Science','ALL'])).optional(),
     startTime: z.string().regex(/^\d{2}:\d{2}$/,'Invalid time (HH:MM)').optional(),
