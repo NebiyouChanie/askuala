@@ -12,7 +12,7 @@ const TutorCreateSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   availableDays: z.array(z.string()).min(1, "Select at least one day"),
-  deliveryMethod: z.enum(["online", "face-to-face"]),
+  deliveryMethod: z.enum(["online", "face-to-face", "online-&-face-to-face"]),
   cvPath: z.string().min(1, "CV is required"),
 })
 

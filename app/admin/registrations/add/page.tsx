@@ -403,6 +403,45 @@ export default function AdminRegistrationAddPage() {
     setLoading(true)
     setGeneratedPassword('') // Clear any previous success state
     try {
+      // Early validation for tutors to avoid partial user creation
+      if (selectedCourse === 'tutors') {
+        let earlyValidationFailed = false
+        if (!data.age) { form.setError('age' as any, { type: 'manual', message: 'Age is required' }); earlyValidationFailed = true }
+        if (!data.gender) { form.setError('gender' as any, { type: 'manual', message: 'Gender is required' }); earlyValidationFailed = true }
+        if (!data.gradeLevels || data.gradeLevels.length === 0) { form.setError('gradeLevels' as any, { type: 'manual', message: 'Select at least one grade range' }); earlyValidationFailed = true }
+        if (!data.subjects || data.subjects.length === 0) { form.setError('subjects' as any, { type: 'manual', message: 'Select at least one subject' }); earlyValidationFailed = true }
+        if (!data.startTime) { form.setError('startTime' as any, { type: 'manual', message: 'Start time is required' }); earlyValidationFailed = true }
+        if (!data.endTime) { form.setError('endTime' as any, { type: 'manual', message: 'End time is required' }); earlyValidationFailed = true }
+        if (!data.availableDays || data.availableDays.length === 0) { form.setError('availableDays' as any, { type: 'manual', message: 'Select available days' }); earlyValidationFailed = true }
+        if (!data.deliveryMethod) { form.setError('deliveryMethod' as any, { type: 'manual', message: 'Select delivery method' }); earlyValidationFailed = true }
+        if (!data.cv) { form.setError('cv' as any, { type: 'manual', message: 'CV (PDF) is required' }); earlyValidationFailed = true }
+        if (earlyValidationFailed) {
+          toast.error('Please fix validation errors')
+          setLoading(false)
+          return
+        }
+      }
+
+      // Handle file upload for tutors BEFORE user creation to prevent partial inserts
+      let cvPath = ''
+      if (selectedCourse === 'tutors' && data.cv) {
+        const formDataFile = new FormData()
+        formDataFile.append('cv', data.cv)
+        
+        const uploadResponse = await fetch('/api/tutors/upload-cv', {
+          method: 'POST',
+          body: formDataFile
+        })
+        
+        const uploadData = await uploadResponse.json()
+        if (!uploadData.success) {
+          toast.error(uploadData.error || 'Failed to upload CV')
+          setLoading(false)
+          return
+        }
+        cvPath = uploadData.data.filePath
+      }
+
       let userId = selectedUser?.user_id
 
       // If no user selected, create new user
@@ -457,24 +496,6 @@ export default function AdminRegistrationAddPage() {
       if (checkData.success && checkData.data && checkData.data.length > 0) {
         toast.error(`User is already registered for ${selectedCourse}`)
         return
-      }
-
-      // Handle file upload for tutors
-      let cvPath = ''
-      if (selectedCourse === 'tutors' && data.cv) {
-        const formDataFile = new FormData()
-        formDataFile.append('cv', data.cv)
-        
-        const uploadResponse = await fetch('/api/tutors/upload-cv', {
-          method: 'POST',
-          body: formDataFile
-        })
-        
-        const uploadData = await uploadResponse.json()
-        if (!uploadData.success) {
-          throw new Error(uploadData.error || 'Failed to upload CV')
-        }
-        cvPath = uploadData.data.filePath
       }
 
       // Prepare course data based on course type
@@ -573,8 +594,15 @@ export default function AdminRegistrationAddPage() {
 
       const courseResult = await courseResponse.json()
       
-      if (!courseResult.success) {
-        throw new Error(courseResult.error || 'Failed to register for course')
+      if (!courseResponse.ok || !courseResult.success) {
+        if (courseResult?.details && Array.isArray(courseResult.details)) {
+          courseResult.details.forEach((err: any) => {
+            if (err?.message) toast.error(err.message)
+          })
+        } else {
+          toast.error(courseResult.error || 'Failed to register for course')
+        }
+        return
       }
 
       toast.success('Registration completed successfully!')
