@@ -39,7 +39,7 @@ export default function Footer() {
             <div>
               <h3 className="text-xl font-bold mb-6">Support</h3>
               <p className="text-gray-300 mb-6">
-                Askuala is a dedicated tutor and consultancy company which delivers an online and face to face services
+                Askuala Plus is a dedicated tutor and consultancy company which delivers an online and face to face services
                 on education
               </p>
                
@@ -66,7 +66,7 @@ export default function Footer() {
           </div>
 
           <div className="border-t border-gray-600 mt-12 pt-8 text-center">
-            <p className="text-gray-400 text-sm">Copyright © Askuala 2025, All Rights Reserved</p>
+            <p className="text-gray-400 text-sm">Copyright © Askuala Plus 2025, All Rights Reserved</p>
           </div>
         </div>
       </footer>

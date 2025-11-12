@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const origin = process.env.NEXT_PUBLIC_APP_URL || ''
     const verifyUrl = `${origin}/api/auth/verify?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
-    const subject = 'Verify your Askuala account'
+    const subject = 'Verify your Askuala Plus account'
     const text = `Please verify your email by visiting: ${verifyUrl}`
     const html = `<p>Please verify your email by clicking <a href="${verifyUrl}" target="_blank">this link</a>.</p>`
     try { await sendEmail(email, subject, text, html) } catch {}
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
 
 
 

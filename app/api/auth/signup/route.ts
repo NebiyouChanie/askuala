@@ -72,9 +72,9 @@ export async function POST(req: NextRequest) {
 
       const origin = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`
       const verifyUrl = `${origin}/api/auth/verify?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
-      const subject = 'Verify your Askuala account'
-      const text = `Welcome to Askuala!\n\nPlease verify your email by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours.`
-      const html = `<p>Welcome to Askuala!</p><p>Please verify your email by clicking the link below:</p><p><a href="${verifyUrl}" target="_blank">Verify my email</a></p><p>This link expires in 24 hours.</p>`
+      const subject = 'Verify your Askuala Plus account'
+      const text = `Welcome to Askuala Plus!\n\nPlease verify your email by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours.`
+      const html = `<p>Welcome to Askuala Plus!</p><p>Please verify your email by clicking the link below:</p><p><a href="${verifyUrl}" target="_blank">Verify my email</a></p><p>This link expires in 24 hours.</p>`
       try {
         await sendEmail(email, subject, text, html)
       } catch {

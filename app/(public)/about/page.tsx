@@ -12,7 +12,7 @@ const whyChooseUs = [
     icon: Target,
     title: "About",
     description:
-      "Askuala Educational Consultancy PLC is a leading Ethiopian online and hybrid consultancy transforming learning and professional development with innovative, affordable, technology‑driven services: on‑demand tutoring, professional trainings, strategic consultations, research advisory, scholarship support, research/document reviews, data entry, curriculum development, and institutional capacity building.",
+      "Askuala Plus Educational Consultancy PLC is a leading Ethiopian online and hybrid consultancy transforming learning and professional development with innovative, affordable, technology‑driven services: on‑demand tutoring, professional trainings, strategic consultations, research advisory, scholarship support, research/document reviews, data entry, curriculum development, and institutional capacity building.",
   },
   {
     icon: Eye,

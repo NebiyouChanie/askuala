@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Askuala Educational Consultancy",
-    template: "%s - Askuala",
+    default: "Askuala Plus Educational Consultancy",
+    template: "%s - Askuala Plus",
   },
   description:
-    "Askuala provides on‑demand tutoring, professional trainings, strategic consultations, research advisory, scholarship support, document reviews, data entry services, and educational capacity building.",
+    "Askuala Plus provides on‑demand tutoring, professional trainings, strategic consultations, research advisory, scholarship support, document reviews, data entry services, and educational capacity building.",
   keywords: [
     "tutoring",
     "online tutoring",
@@ -37,24 +37,24 @@ export const metadata: Metadata = {
     "Addis Ababa",
   ],
   openGraph: {
-    title: "Askuala Educational Consultancy",
+    title: "Askuala Plus Educational Consultancy",
     description:
       "On‑demand tutoring, trainings, consultations, and research advisory to empower learners and organizations.",
     url: "/",
-    siteName: "Askuala",
+    siteName: "Askuala Plus",
     type: "website",
     images: [
       {
         url: "/images/logo1.png",
         width: 1200,
         height: 630,
-        alt: "Askuala",
+        alt: "Askuala Plus",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Askuala Educational Consultancy",
+    title: "Askuala Plus Educational Consultancy",
     description:
       "Tutoring, trainings, and research advisory for students, professionals, and institutions.",
     images: ["/images/logo1.png"],

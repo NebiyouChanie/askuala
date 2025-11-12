@@ -25,7 +25,7 @@ const SignupSchema = z.object({
   email: z.string().email('Invalid email').max(100),
   phone: z.string().min(1, 'Phone is required').max(20),
   address: z.string().min(1, 'Address is required').max(100),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(6, 'Confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',

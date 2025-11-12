@@ -34,7 +34,7 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100svh_-_7rem)]">
           <div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
-              Askuala Educational Consultancy PLC{" "}
+              Askuala Plus Educational Consultancy PLC{" "}
               <span className="text-[#FF6652] ">Founded in 2018 E.C</span>.
             </h1>
             <p className="text-lg text-white mb-8 leading-relaxed">
@@ -44,9 +44,11 @@ export default function HomePage() {
               educational supports such as curriculum development and
               institutional capacity building
             </p>
-            <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white font-semibold px-8 py-3 text-lg">
-              Get Started
-            </Button>
+            <Link href="/auth/signup">
+              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white font-semibold px-8 py-3 text-lg">
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           <div className="relative">
@@ -493,7 +495,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  "Askuala has transformed my learning experience. The
+                  "Askuala Plus has transformed my learning experience. The
                   interactive classes and personalized approach helped me
                   achieve my academic goals."
                 </p>
@@ -518,7 +520,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   "The quality of education and support from instructors is
-                  exceptional. I highly recommend Askuala to anyone looking to
+                  exceptional. I highly recommend Askuala Plus to anyone looking to
                   enhance their skills."
                 </p>
                 <div className="flex items-center gap-4">
@@ -542,7 +544,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   "Flexible learning options and comprehensive course materials
-                  make Askuala the perfect platform for busy professionals like
+                  make Askuala Plus the perfect platform for busy professionals like
                   me."
                 </p>
                 <div className="flex items-center gap-4">

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Params) {
   const data = services.find((s) => s.slug === slug)
   if (!data) return {}
   return {
-    title: `${data.title} | Askuala Services`,
+    title: `${data.title} | Askuala Plus Services`,
     description: data.shortDescription,
   }
 }

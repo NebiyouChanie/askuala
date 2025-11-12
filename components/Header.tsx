@@ -71,7 +71,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto py-4">
           <div className="flex items-center justify-between">
           <div className="relative flex items-center space-x-2 w-28 h-8 sm:w-40 sm:h-10 ">
-              <Image src="/images/logo1.png" alt="Askuala logo" fill priority className="object-contain" />
+              <Image src="/images/logo1.png" alt="Askuala Plus logo" fill priority className="object-contain" />
             </div>
 
             <nav className="hidden md:flex items-center space-x-8">
@@ -160,7 +160,7 @@ export default function Header() {
             <aside className="absolute right-0 top-0 h-full w-72 bg-white text-gray-900 shadow-xl p-4 flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <div className="relative w-28 h-8">
-                  <Image src="/images/logo1.png" alt="Askuala logo" fill className="object-contain" />
+                  <Image src="/images/logo1.png" alt="Askuala Plus logo" fill className="object-contain" />
                 </div>
                 <button aria-label="Close menu" onClick={() => setIsMobileOpen(false)}>
                   <X className="w-6 h-6" />
