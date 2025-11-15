@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase } from "lucide-react"
+import { BookOpen, GraduationCap, Monitor, Lightbulb, Briefcase, Users, Video, Award, BarChart3 } from "lucide-react"
+import { services as allServices } from "@/app/(public)/services/data"
 
 const options = [
   {
@@ -44,6 +45,41 @@ const options = [
 ]
 
 export default function RegisterIndexPage() {
+  const iconMap: Record<string, React.ElementType> = {
+    video: Video,
+    users: Users,
+    bookOpen: BookOpen,
+    graduationCap: GraduationCap,
+    briefcase: Briefcase,
+    lightbulb: Lightbulb,
+    award: Award,
+    barChart3: BarChart3,
+  }
+
+  const computeServiceHref = (slug: string, ctaLink?: string) => {
+    const base = ctaLink || "/contact"
+    if (base.startsWith("/register/training")) {
+      const hasQuery = base.includes("?")
+      return `${base}${hasQuery ? "&" : "?"}service=${encodeURIComponent(slug)}`
+    }
+    if (base === "/contact") {
+      return `/register/training?service=${encodeURIComponent(slug)}`
+    }
+    return base
+  }
+
+  const serviceOptions = allServices.map((svc) => {
+    const Icon = iconMap[svc.iconKey] || Briefcase
+    return {
+      id: `service-${svc.slug}`,
+      title: svc.title,
+      href: computeServiceHref(svc.slug, svc.ctaLink),
+      icon: Icon,
+      description: svc.shortDescription,
+    }
+  })
+  const allCards = [...options, ...serviceOptions]
+
   return (
     <div className="min-h-screen bg-white">
       <section
@@ -65,7 +101,7 @@ export default function RegisterIndexPage() {
 
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {options.map((opt) => {
+          {allCards.map((opt) => {
             const Icon = opt.icon
             return (
               <Card key={opt.id} className="hover:shadow-lg transition-shadow">
