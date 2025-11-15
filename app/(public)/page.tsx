@@ -15,6 +15,8 @@ import {
   Briefcase,
 } from "lucide-react";
 import Image from "next/image";
+import ServicesPage from "./services/page";
+import Cards from "./services/cards";
 
 export default function HomePage() {
   return (
@@ -185,7 +187,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
+      <Cards />
       {/* Top Categories */}
       <section className="py-20 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -447,7 +449,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Hybrid, technology‑driven learning and services
+                HYBRID, TECHNOLOGY DRIVEN LEARNING AND SERVICES
               </h2>
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
