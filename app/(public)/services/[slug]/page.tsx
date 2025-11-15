@@ -25,7 +25,14 @@ export default async function ServiceDetailPage({ params }: Params) {
   const data = services.find((s) => s.slug === slug)
   if (!data) return notFound()
 
-  const ctaHref = data.ctaLink || "/contact"
+	const defaultHref = data.ctaLink || "/contact"
+	let ctaHref = defaultHref
+	if (defaultHref.startsWith("/register/training")) {
+		const hasQuery = defaultHref.includes("?")
+		ctaHref = `${defaultHref}${hasQuery ? "&" : "?"}service=${encodeURIComponent(data.slug)}`
+	} else if (defaultHref === "/contact") {
+		ctaHref = `/register/training?service=${encodeURIComponent(data.slug)}`
+	}
 
   return (
     <div className="min-h-screen bg-white">

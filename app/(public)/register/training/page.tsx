@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Monitor, Users, User } from "lucide-react"
 import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
+import { services as allServices } from "@/app/(public)/services/data"
 
 const trainingOptions = [
   "Software",
@@ -41,6 +43,10 @@ export default function TrainingRegisterPage() {
   const [user, setUser] = useState<{ userId: string; firstName: string; lastName: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+	const searchParams = useSearchParams()
+	const serviceSlug = searchParams.get("service") || ""
+	const serviceData = useMemo(() => allServices.find(s => s.slug === serviceSlug) || null, [serviceSlug])
+	const availableTrainingOptions = useMemo(() => (serviceData ? [serviceData.title] : trainingOptions), [serviceData])
 
   const {
     register,
@@ -84,6 +90,15 @@ export default function TrainingRegisterPage() {
     }
     fetchUser()
   }, [])
+
+	// If navigating from a specific service, preselect and lock training type to that service
+	useEffect(() => {
+		if (serviceData) {
+			const onlyType = serviceData.title
+			setSelectedTrainingTypes([onlyType])
+			setValue("trainingTypes", [onlyType])
+		}
+	}, [serviceData, setValue])
 
   const toggleTrainingType = (type: string) => {
     const next = selectedTrainingTypes.includes(type)
@@ -152,15 +167,19 @@ export default function TrainingRegisterPage() {
       >
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
-          <h1 className="text-5xl font-bold">Training Registration</h1>
+					<h1 className="text-5xl font-bold">{serviceData ? serviceData.title : "Training Registration"}</h1>
         </div>
       </section>
 
       <div className="max-w-4xl mx-auto px-6 py-12">
         <Card className="border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-8">
-            <CardTitle className="text-3xl font-bold text-gray-800">Join Our Training Program</CardTitle>
-            <p className="text-gray-600 mt-2">Enhance your skills with professional training</p>
+						<CardTitle className="text-3xl font-bold text-gray-800">
+							{serviceData ? `Request ${serviceData.title}` : "Join Our Training Program"}
+						</CardTitle>
+						<p className="text-gray-600 mt-2">
+							{serviceData ? serviceData.shortDescription : "Enhance your skills with professional training"}
+						</p>
           </CardHeader>
           <CardContent className="px-8 pb-8">
             {showAuthPrompt && (
@@ -270,9 +289,11 @@ export default function TrainingRegisterPage() {
               {/* Training Types */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-gray-800 border-b-2 border-[#245D51]/20 pb-2">Training Types *</h3>
-                <p className="text-sm text-gray-600">Select the type(s) of training you're interested in (you can select multiple)</p>
+					{!serviceData && (
+						<p className="text-sm text-gray-600">Select the type(s) of training you're interested in (you can select multiple)</p>
+					)}
                 <div className="flex flex-wrap gap-3">
-                  {trainingOptions.map((type) => (
+						{availableTrainingOptions.map((type) => (
                     <Badge
                       key={type}
                       variant={selectedTrainingTypes.includes(type) ? "default" : "outline"}

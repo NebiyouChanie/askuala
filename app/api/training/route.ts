@@ -124,15 +124,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already has a training registration
-    const existingTraining = await queryOne(
-      'SELECT training_id FROM trainings WHERE user_id = ?',
+    // Check if user is already registered for any of the requested training types
+    const existingRows = await query(
+      'SELECT training_types FROM trainings WHERE user_id = ?',
       [userId]
     )
-
-    if (existingTraining) {
+    const existingTypes = new Set<string>()
+    for (const row of existingRows as any[]) {
+      const typesRaw = row?.training_types
+      try {
+        const parsed = Array.isArray(typesRaw) ? typesRaw : JSON.parse(typesRaw || '[]')
+        if (Array.isArray(parsed)) {
+          for (const t of parsed) existingTypes.add(String(t))
+        }
+      } catch {
+        // ignore malformed json
+      }
+    }
+    const requestedTypes: string[] = Array.isArray(validatedData.trainingTypes) ? validatedData.trainingTypes : []
+    const duplicates = requestedTypes.filter((t) => existingTypes.has(t))
+    if (duplicates.length > 0) {
       return NextResponse.json(
-        { success: false, error: 'Training registration already exists for this user' },
+        { success: false, error: `Training registration already exists for: ${duplicates.join(', ')}` },
         { status: 400 }
       )
     }

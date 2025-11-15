@@ -11,6 +11,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { toast } from "sonner"
 import TrainingFields from "@/components/admin/registrations/TrainingFields"
 import UserSearchSelect, { AdminUser } from "@/components/admin/registrations/UserSearchSelect"
+import { services as allServices } from "@/app/(public)/services/data"
 
 const TrainingSchema = z.object({
 	firstName: z.string().min(1, 'First name is required'),
@@ -45,7 +46,14 @@ export default function TrainingRegistrationForm({ onBack }: Props) {
 	const [loadingInstructors, setLoadingInstructors] = useState(false)
 	const [loading, setLoading] = useState(false)
 
-	const trainingOptions = ['Software', 'Coding', 'Kaizen', 'Accounting', 'Graphics', 'Video Editing', 'FX Trading', 'UX/UI', 'Digital Marketing']
+	const baseTrainingOptions = ['Software', 'Coding', 'Kaizen', 'Accounting', 'Graphics', 'Video Editing', 'FX Trading', 'UX/UI', 'Digital Marketing']
+	const serviceBasedTrainingTypes = allServices
+		.filter((s) => {
+			const href = s.ctaLink || '/contact'
+			return href === '/register/training' || href === '/contact'
+		})
+		.map((s) => s.title)
+	const trainingOptions = [...baseTrainingOptions, ...serviceBasedTrainingTypes.filter((t) => !baseTrainingOptions.includes(t))]
 
 	const form = useForm<TrainingValues>({
 		resolver: zodResolver(TrainingSchema),
@@ -143,10 +151,26 @@ export default function TrainingRegistrationForm({ onBack }: Props) {
 
 			const dupRes = await fetch(`/api/training?userId=${userId}`)
 			const dupData = await dupRes.json()
-			if (dupRes.ok && dupData.success && Array.isArray(dupData.data) && dupData.data.length > 0) {
-				toast.error('User is already registered for training')
-				setLoading(false)
-				return
+			if (dupRes.ok && dupData.success && Array.isArray(dupData.data)) {
+				const existingTypes = new Set<string>()
+				for (const row of dupData.data) {
+					const raw = row?.training_types
+					try {
+						const parsed = Array.isArray(raw) ? raw : JSON.parse(raw || '[]')
+						if (Array.isArray(parsed)) {
+							for (const t of parsed) existingTypes.add(String(t))
+						}
+					} catch {
+						// ignore parse error
+					}
+				}
+				const selectedTypes: string[] = data.trainingTypes || []
+				const overlap = selectedTypes.filter((t) => existingTypes.has(t))
+				if (overlap.length > 0) {
+					toast.error(`User is already registered for: ${overlap.join(', ')}`)
+					setLoading(false)
+					return
+				}
 			}
 
 			const payload = {

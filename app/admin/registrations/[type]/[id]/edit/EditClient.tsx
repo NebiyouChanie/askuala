@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { toast } from "sonner"
+import { services as allServices } from "@/app/(public)/services/data"
 
 type Props = { type: string; id: string }
 
@@ -29,7 +30,14 @@ export default function EditRegistrationClient({ type, id }: Props) {
   const gradeLevelRanges = ["KG", "1-4", "5-8", "9-12"]
   const subjectsList = ["Maths", "Physics", "Chemistry", "Biology", "English", "Science", "ALL"]
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  const trainingOptions = ["Software","Coding","Kaizen","Accounting","Graphics","Video Editing","FX Trading","UX/UI","Digital Marketing"]
+  const baseTrainingOptions = ["Software","Coding","Kaizen","Accounting","Graphics","Video Editing","FX Trading","UX/UI","Digital Marketing"]
+  const serviceBasedTrainingTypes = allServices
+    .filter((s) => {
+      const href = s.ctaLink || '/contact'
+      return href === '/register/training' || href === '/contact'
+    })
+    .map((s) => s.title)
+  const trainingOptions = [...baseTrainingOptions, ...serviceBasedTrainingTypes.filter((t) => !baseTrainingOptions.includes(t))]
 
   const [age, setAge] = useState<number | "">("")
   const [gender, setGender] = useState<"male" | "female" | "">("")
