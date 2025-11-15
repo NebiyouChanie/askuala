@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -37,7 +37,7 @@ const TrainingSchema = z.object({
 
 type TrainingFormValues = z.infer<typeof TrainingSchema>
 
-export default function TrainingRegisterPage() {
+function TrainingRegisterContent() {
   const [submitted, setSubmitted] = useState(false)
   const [selectedTrainingTypes, setSelectedTrainingTypes] = useState<string[]>([])
   const [user, setUser] = useState<{ userId: string; firstName: string; lastName: string; email: string } | null>(null)
@@ -377,6 +377,31 @@ export default function TrainingRegisterPage() {
       </div>
     </div>
   )
+}
+
+export default function TrainingRegisterPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50">
+					<section
+						className="text-white px-6 min-h-[50svh] relative pt-28"
+						style={{ backgroundImage: "url(/images/hero-bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
+					>
+						<div className="absolute inset-0 bg-black/40" />
+						<div className="relative max-w-7xl mx-auto min-h-[calc(50svh_-_7rem)] flex items-center">
+							<h1 className="text-5xl font-bold">Training Registration</h1>
+						</div>
+					</section>
+					<div className="max-w-4xl mx-auto px-6 py-12">
+						<div className="w-10 h-10 border-2 border-[#245D51] border-t-transparent rounded-full animate-spin mx-auto my-20" />
+					</div>
+				</div>
+			}
+		>
+			<TrainingRegisterContent />
+		</Suspense>
+	)
 }
 
 
