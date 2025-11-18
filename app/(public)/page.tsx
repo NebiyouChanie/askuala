@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import {
   Star,
   Users,
@@ -14,16 +13,19 @@ import {
   BarChart3,
   Smartphone,
   Briefcase,
+  Lightbulb,
+  GraduationCap,
 } from "lucide-react";
 import Image from "next/image";
-import ServicesPage from "./services/page";
+import Link from "next/link";
+import { services as allServices } from "./services/data";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section
-        className="text-white px-6 min-h-svh relative pt-48 lg:pt-32"
+        className="text-white px-6 min-h-svh relative pt-28"
         style={{
           backgroundImage: "url(/images/hero-bg2.png)",
           backgroundSize: "cover",
@@ -33,22 +35,20 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center min-h-[calc(100svh_-_7rem)]">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
-              Askuala Plus Educational Consultancy PLC{" "}
+            <h1 className="text-5xl font-bold leading-tight mb-6">
+              Askuala Educational Consultancy PLC{" "}
               <span className="text-[#FF6652] ">Founded in 2018 E.C</span>.
             </h1>
-            <p className="text-lg text-white mb-8 leading-relaxed">
+            <p className="text-xl text-teal-100 mb-8 leading-relaxed">
               our Services are on-demand tutoring, professional trainings,
               strategic consultations, research advisory, scholarship search
               support, research/document reviews, data entry services, and other
               educational supports such as curriculum development and
               institutional capacity building
             </p>
-            <Link href="/auth/signup">
-              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white font-semibold px-8 py-3 text-lg">
-                Get Started
-              </Button>
-            </Link>
+            <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white font-semibold px-8 py-3 text-lg">
+              Get Started
+            </Button>
           </div>
 
           <div className="relative">
@@ -71,73 +71,46 @@ export default function HomePage() {
             <Badge className="bg-orange-100 text-orange-600 mb-4">
               Service
             </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Our Services
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center p-8 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="w-8 h-8 text-[#245D51]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">
-                  On‑Demand Tutoring
-                </h3>
-                <p className="text-gray-600">
-                  Personalized live support and detailed explanations that build
-                  real understanding.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-8 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Video className="w-8 h-8 text-[#245D51]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">
-                  Face‑to‑Face Support
-                </h3>
-                <p className="text-gray-600">
-                  In‑person sessions for immediate feedback and highly engaging
-                  learning experiences.
-                </p>
-              </CardContent>
-            </Card>
-
-
-            <Card className="text-center p-8 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-8 h-8 text-[#245D51]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">
-                  Professional Trainings
-                </h3>
-                <p className="text-gray-600">
-                  Workshops for educators and professionals to upskill and stay
-                  ahead.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-8 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Award className="w-8 h-8 text-[#245D51]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">
-                  Strategic Consultations
-                </h3>
-                <p className="text-gray-600">
-                  Curriculum, policy, capacity building, e‑learning advisory,
-                  and assessment tools.
-                </p>
-              </CardContent>
-            </Card>
-           
+            {allServices.map((service) => {
+              const iconMap: Record<string, any> = {
+                video: Video,
+                users: Users,
+                bookOpen: BookOpen,
+                graduationCap: GraduationCap,
+                briefcase: Briefcase,
+                lightbulb: Lightbulb,
+                award: Award,
+                barChart3: BarChart3,
+              };
+              const Icon = iconMap[service.iconKey] || Briefcase;
+              const href = `/services/${service.slug}`;
+              return (
+                <Card key={service.slug} className="text-center p-8 hover:shadow-lg transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Icon className="w-8 h-8 text-[#245D51]" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-4">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-600">
+                      {service.shortDescription}
+                    </p>
+                    <div className="mt-6">
+                      <Link href={href}>
+                        <Button className="bg-[#245D51] hover:bg-[#245D51]/90 text-white">View Details</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -165,7 +138,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Empowering learning and professional growth in Ethiopia
               </h2>
               <p className="text-gray-600 text-lg mb-8 leading-relaxed">
@@ -184,14 +157,14 @@ export default function HomePage() {
                   Join thousands of learners
                 </span>
               </div>
-              {/* <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
+              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
                 Get Started
-              </Button> */}
+              </Button>
             </div>
           </div>
         </div>
       </section>
-
+      
       {/* Top Categories */}
       <section className="py-20 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -199,7 +172,7 @@ export default function HomePage() {
             <Badge className="bg-orange-100 text-orange-600 mb-4">
               Category
             </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Top Categories</h2>
+            <h2 className="text-4xl font-bold text-gray-900">Top Categories</h2>
           </div>
 
 
@@ -329,7 +302,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="bg-orange-100 text-orange-600 mb-4">Course</Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 className="text-4xl font-bold text-gray-900">
               Explore Popular Courses
             </h2>
           </div>
@@ -339,20 +312,33 @@ export default function HomePage() {
               <div className="relative">
                 <Image
                   src="/images/logo.jpg"
-                  alt="Programming Course"
+                  alt="Mathematics Course"
                   width={400}
                   height={200}
                   className="w-full h-48 object-cover"
                 />
-                <Badge className="absolute top-4 left-4 bg-blue-600 text-white">
-                  Programming
+                <Badge className="absolute top-4 left-4 bg-orange-500 text-white">
+                  Mathematics
                 </Badge>
               </div>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-2">Programming Fundamentals</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Learn core programming concepts, problem‑solving, and best practices to build a solid foundation for web, app, and data projects.
-                </p>
+                <h3 className="font-semibold text-lg mb-2">
+                  Mathematics for Grade 9-12
+                </h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">(4.9)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">2.3k Students</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -361,20 +347,33 @@ export default function HomePage() {
               <div className="relative">
                 <Image
                   src="/images/logo.jpg"
-                  alt="Digital Marketing Course"
+                  alt="English Course"
                   width={400}
                   height={200}
                   className="w-full h-48 object-cover"
                 />
-                <Badge className="absolute top-4 left-4 bg-pink-600 text-white">
-                  Marketing
+                <Badge className="absolute top-4 left-4 bg-red-500 text-white">
+                  English
                 </Badge>
               </div>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-2">Digital Marketing Essentials</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Master the essentials of social media, SEO, content, and analytics to plan and execute effective digital marketing campaigns.
-                </p>
+                <h3 className="font-semibold text-lg mb-2">
+                  English for Grade 9-12
+                </h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">(4.8)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">1.8k Students</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -382,30 +381,41 @@ export default function HomePage() {
               <div className="relative">
                 <Image
                   src="/images/logo.jpg"
-                  alt="Research Methods Course"
+                  alt="Social Science Course"
                   width={400}
                   height={200}
                   className="w-full h-48 object-cover"
                 />
-                <Badge className="absolute top-4 left-4 bg-purple-600 text-white">
-                  Research
+                <Badge className="absolute top-4 left-4 bg-blue-500 text-white">
+                  Social Science
                 </Badge>
               </div>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-2">Research Methods Essentials</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Learn practical research design, data collection, and analysis techniques to conduct quality academic and professional studies.
-                </p>
+                <h3 className="font-semibold text-lg mb-2">
+                  Social Science for Grade 9-12
+                </h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">(4.7)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">1.5k Students</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
 
           <div className="text-center">
-            <Link href="/services">
-              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
-                View All Courses
-              </Button>
-            </Link>
+            <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
+              View All Courses
+            </Button>
           </div>
         </div>
       </section>
@@ -416,8 +426,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Hybrid, technology‑driven learning and services
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
+                HYBRID, TECHNOLOGY DRIVEN LEARNING AND SERVICES
               </h2>
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
@@ -439,11 +449,9 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
-              <Link href="/register">
-                <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
-                  Join & Start
-                </Button>
-              </Link>
+              <Button className="bg-[#FF6652] hover:bg-[#e55a4a] text-white px-8 py-3">
+                Join & Start
+              </Button>
             </div>
 
             <div className="relative">
@@ -471,7 +479,7 @@ export default function HomePage() {
         </div>
       </section>
 
-       
+      
 
       {/* Testimonials */}
       <section className="py-20 px-6 bg-gray-50">
@@ -480,7 +488,7 @@ export default function HomePage() {
             <Badge className="bg-orange-100 text-orange-600 mb-4">
               Testimonial
             </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 className="text-4xl font-bold text-gray-900">
               Our Happy Clients
             </h2>
           </div>
@@ -495,7 +503,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  "Askuala Plus has transformed my learning experience. The
+                  "Askuala has transformed my learning experience. The
                   interactive classes and personalized approach helped me
                   achieve my academic goals."
                 </p>
@@ -520,7 +528,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   "The quality of education and support from instructors is
-                  exceptional. I highly recommend Askuala Plus to anyone looking to
+                  exceptional. I highly recommend Askuala to anyone looking to
                   enhance their skills."
                 </p>
                 <div className="flex items-center gap-4">
@@ -544,7 +552,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   "Flexible learning options and comprehensive course materials
-                  make Askuala Plus the perfect platform for busy professionals like
+                  make Askuala the perfect platform for busy professionals like
                   me."
                 </p>
                 <div className="flex items-center gap-4">
